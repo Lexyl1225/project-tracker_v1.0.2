@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+  <title>Project Developments Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bar-bg: #1f2937;
+      --bar-fill: #60a5fa;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+      background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+      color: var(--text);
+    }
+
+    header {
+      padding: 40px 24px 20px;
+      display: grid;
+      gap: 10px;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    .auth-actions {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px 24px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+    .auth-message {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+    }
+    .welcome-banner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      background: rgba(34, 197, 94, 0.15);
+      color: #bbf7d0;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      display: none;
+    }
+    .welcome-banner.active {
+      display: block;
+    }
+    .project-switcher {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px 24px;
+      display: grid;
+      gap: 8px;
+    }
+    .project-switcher .switcher-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+    .project-switcher .switcher-row .btn {
+      min-width: 160px;
+      justify-self: start;
+    }
+    @media (max-width: 640px) {
+      .project-switcher .switcher-row { grid-template-columns: 1fr; }
+    }
+    .project-switcher .helper {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .section-picker {
+      margin-top: 12px;
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid #1f2937;
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 14px;
+    }
+    .section-picker[hidden] { display: none; }
+    .section-picker__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .section-picker__title {
+      margin: 0;
+      font-size: 1rem;
+    }
+    .section-picker__helper {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .section-picker__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+    .section-picker__item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      gap: 14px;
+    }
+    .section-picker__label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+    .section-picker__meta {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .section-picker__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid #1f2937;
+      appearance: none;
+      background: #0b1325;
+      position: relative;
+    }
+    .check:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .check:checked::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 2px solid #0b1325;
+      border-top: none;
+      border-right: none;
+      transform: rotate(-45deg);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .edit-title {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .edit-title svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+    .inline-title-editor {
+      margin-top: 12px;
+      display: none;
+      gap: 10px;
+    }
+    .inline-title-editor.active {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+    @media (max-width: 640px) {
+      .inline-title-editor.active {
+        grid-template-columns: 1fr;
+      }
+    }
+    .logo {
+      width: 52px; height: 52px;
+      object-fit: contain;
+      flex-shrink: 0;
+      display: block;
+    }
+    h1 { margin: 0; font-size: 1.75rem; letter-spacing: 0.2px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .info-trigger { position: relative; }
+    .pill {
+      background: #0b1325;
+      border: 1px solid #1e293b;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+    .btn {
+      background: var(--accent);
+      color: #062a3a;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
+    }
+    .btn:hover {
+      opacity: 0.92;
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.42);
+    }
+    .btn.secondary {
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .btn:active { transform: translateY(1px); }
+
+    .info-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 220px;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 6px;
+      z-index: 10;
+    }
+    .info-menu[hidden] { display: none; }
+    .info-menu button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .info-menu button:hover {
+      border-color: #1f2937;
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: repeat(6, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: repeat(1, 1fr); }
+    }
+
+    .page-actions {
+      max-width: 1120px;
+      margin: 40px auto 0;
+      padding: 0 24px 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .page-actions {
+        margin-top: 32px;
+        gap: 12px;
+      }
+      .page-actions .btn {
+        flex: 1 1 100%;
+        min-height: 48px;
+        font-size: 1rem;
+      }
+    }
+
+    .empty-state {
+      max-width: 1120px;
+      margin: 24px auto 0;
+      padding: 24px;
+      border-radius: var(--radius);
+      border: 1px dashed #1f2937;
+      background: rgba(11, 19, 37, 0.8);
+      text-align: center;
+      color: var(--muted);
+    }
+    .empty-state__actions {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      grid-column: span 4;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+      border: 1px solid #1f2937;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card header {
+      padding: 0;
+      margin: 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 18px; height: 18px; fill: currentColor; }
+    .card-icon--electrical   { background: rgba(251, 191, 36, 0.12);  color: #fbbf24; }
+    .card-icon--architectural{ background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
+    .card-icon--mechanical   { background: rgba(52,  211, 153, 0.12); color: #34d399; }
+    .card-icon--plumbing     { background: rgba(56,  189, 248, 0.12); color: #38bdf8; }
+    .card-icon--electronics  { background: rgba(251, 113, 133, 0.12); color: #fb7185; }
+    .card-icon--general      { background: rgba(99,  102, 241, 0.12); color: #818cf8; }
+    .card-icon--others       { background: rgba(148, 163, 184, 0.12); color: #94a3b8; }
+    .title {
+      font-weight: 700; letter-spacing: 0.2px; font-size: 1rem;
+    }
+    .status {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+    }
+    .status.ontrack { background: rgba(34, 197, 94, 0.12); color: var(--success); }
+    .status.atrisk  { background: rgba(245, 158, 11, 0.12); color: var(--warning); }
+    .status.delayed { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+
+    .meta {
+      display: flex; gap: 14px; color: var(--muted); font-size: 0.9rem;
+    }
+
+    .progress-wrap { display: grid; gap: 8px; }
+    .progress-bar {
+      height: 11px;
+      background: var(--bar-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #1f2937;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #60a5fa, #22d3ee);
+      transition: width 500ms ease;
+    }
+    .progress-value {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.95rem;
+    }
+    .progress-value .percent { font-weight: 800; color: #93c5fd; }
+    .progress-value .label   { color: var(--muted); }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .controls.single { grid-template-columns: auto; justify-content: flex-end; }
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      outline: none;
+    }
+    .select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+    .footnote { color: var(--muted); font-size: 0.85rem; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    .card[hidden] { display: none !important; }
+    .card::after {
+      content: "";
+      position: absolute; inset: -80px -80px auto auto;
+      width: 220px; height: 220px;
+      background: radial-gradient(120px 120px at 50% 50%, rgba(56,189,248,0.18), transparent 70%);
+      transform: rotate(15deg);
+      pointer-events: none;
+    }
+
+    /* =====================================================================
+       Futuristic theme layer (visual only: no markup or script changes)
+       ===================================================================== */
+    :root {
+      --glass: rgba(15, 23, 42, 0.55);
+      --glass-strong: rgba(15, 23, 42, 0.78);
+      --line: rgba(148, 163, 184, 0.14);
+      --line-strong: rgba(56, 189, 248, 0.35);
+      --cyan: #22d3ee;
+      --violet: #a78bfa;
+      --glow: 0 0 0 1px rgba(56, 189, 248, 0.25), 0 18px 40px rgba(2, 6, 23, 0.55), 0 0 32px rgba(56, 189, 248, 0.12);
+    }
+
+    html { background: #060b18; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(900px 520px at 12% -8%, rgba(56, 189, 248, 0.16), transparent 60%),
+        radial-gradient(800px 480px at 95% 8%, rgba(167, 139, 250, 0.12), transparent 60%),
+        linear-gradient(180deg, #070d1d 0%, #060b18 100%);
+      background-attachment: fixed;
+    }
+
+    /* Animated perspective grid + drifting aurora behind the page */
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: -1;
+    }
+    body::before {
+      inset: -50% -50% 0;
+      background-image:
+        linear-gradient(rgba(56, 189, 248, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.07) 1px, transparent 1px);
+      background-size: 56px 56px;
+      transform: perspective(700px) rotateX(58deg) translateY(30%);
+      transform-origin: center bottom;
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.9), transparent 70%);
+              mask-image: linear-gradient(to top, rgba(0,0,0,0.9), transparent 70%);
+      animation: ui-grid-scroll 14s linear infinite;
+    }
+    body::after {
+      inset: 0;
+      background:
+        radial-gradient(420px 260px at 20% 30%, rgba(34, 211, 238, 0.10), transparent 70%),
+        radial-gradient(380px 260px at 80% 70%, rgba(167, 139, 250, 0.10), transparent 70%);
+      filter: blur(20px);
+      animation: ui-aurora 18s ease-in-out infinite alternate;
+    }
+    @keyframes ui-grid-scroll { to { background-position: 0 56px, 0 0; } }
+    @keyframes ui-aurora {
+      0%   { transform: translate3d(0, 0, 0) scale(1); }
+      50%  { transform: translate3d(4%, -3%, 0) scale(1.08); }
+      100% { transform: translate3d(-4%, 3%, 0) scale(1.02); }
+    }
+
+    /* Top status strip (date + signed-in user) */
+    .auth-actions {
+      padding-top: 22px;
+      gap: 10px;
+      animation: ui-fade-down 0.6s ease both;
+    }
+    .auth-message {
+      font-size: 0.86rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(10px);
+              backdrop-filter: blur(10px);
+      color: #cbd5e1;
+    }
+    #pageTime {
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      border-color: var(--line-strong);
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.12);
+    }
+    #pageTime::before {
+      content: "";
+      display: inline-block;
+      width: 7px; height: 7px;
+      margin-right: 9px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+      vertical-align: 1px;
+      animation: ui-ping 2.2s ease-out infinite;
+    }
+    @keyframes ui-ping {
+      0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+      80%  { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .welcome-banner {
+      margin-top: 14px;
+      border-color: rgba(34, 197, 94, 0.35);
+      background: linear-gradient(90deg, rgba(34, 197, 94, 0.16), rgba(34, 211, 238, 0.08));
+      -webkit-backdrop-filter: blur(8px);
+              backdrop-filter: blur(8px);
+    }
+
+    /* Project switcher panel */
+    .project-switcher {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(12px);
+              backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+      gap: 12px;
+      width: calc(100% - 48px);
+      animation: ui-fade-up 0.6s 0.05s ease both;
+    }
+    .project-switcher .helper { padding-left: 2px; }
+    .section-picker {
+      border-color: var(--line);
+      background: var(--glass-strong);
+      animation: ui-fade-up 0.3s ease both;
+    }
+    .section-picker__item {
+      border-color: var(--line);
+      background: rgba(11, 19, 37, 0.7);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .section-picker__item:hover { border-color: var(--line-strong); background: rgba(56, 189, 248, 0.06); }
+    .check { border-color: #334155; cursor: pointer; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s; }
+    .check:checked { box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+
+    /* Hero header */
+    body > header {
+      margin-top: 18px;
+      padding: 26px 24px 8px;
+      animation: ui-fade-up 0.6s 0.1s ease both;
+    }
+    .logo {
+      border-radius: 14px;
+      padding: 4px;
+      background: radial-gradient(circle at 50% 35%, rgba(56, 189, 248, 0.22), rgba(15, 23, 42, 0.6));
+      border: 1px solid var(--line-strong);
+      animation: ui-logo-glow 4s ease-in-out infinite;
+    }
+    @keyframes ui-logo-glow {
+      0%, 100% { box-shadow: 0 0 14px rgba(56, 189, 248, 0.18); }
+      50%      { box-shadow: 0 0 26px rgba(34, 211, 238, 0.38); }
+    }
+    h1 {
+      font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      background: linear-gradient(90deg, #f8fafc 0%, #7dd3fc 45%, #c4b5fd 70%, #f8fafc 100%);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+              background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: ui-text-shine 9s linear infinite;
+    }
+    @keyframes ui-text-shine { to { background-position: 220% center; } }
+    /* Keep the logo centred against the title block, however many lines the title takes */
+    .brand {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      column-gap: 16px;
+    }
+    .brand > div { min-width: 0; }
+    .title-row {
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 12px;
+    }
+    .title-row h1 {
+      min-width: 0;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+    .edit-title { flex-shrink: 0; }
+    .subtitle {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.74rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .edit-title {
+      border-color: var(--line-strong);
+      background: var(--glass);
+      transition: transform 0.2s, box-shadow 0.2s, color 0.2s;
+    }
+    .edit-title:hover { color: var(--accent); transform: rotate(-8deg); box-shadow: 0 0 16px rgba(56, 189, 248, 0.35); }
+
+    .toolbar { margin-top: 14px; }
+    .pill {
+      border-color: var(--line);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(8px);
+              backdrop-filter: blur(8px);
+      font-size: 0.84rem;
+    }
+    #lastUpdate { color: #e2e8f0; font-variant-numeric: tabular-nums; }
+
+    /* Portfolio filter bar (styled inline in the markup) */
+    body > header > div[style] {
+      margin-top: 12px !important;
+      background: var(--glass) !important;
+      border-color: var(--line) !important;
+      border-radius: 14px !important;
+      -webkit-backdrop-filter: blur(10px);
+              backdrop-filter: blur(10px);
+    }
+
+    /* Inputs */
+    .input, .select {
+      background: rgba(11, 19, 37, 0.75);
+      border-color: #233047;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input:focus, .select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 0 18px rgba(56, 189, 248, 0.15);
+    }
+
+    /* Buttons */
+    .btn {
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+      color: #04202e;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0; left: -60%;
+      width: 40%;
+      background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.55s ease;
+      pointer-events: none;
+    }
+    .btn:hover {
+      opacity: 1;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 26px rgba(34, 211, 238, 0.38);
+    }
+    .btn:hover::after { left: 120%; }
+    .btn:active { transform: translateY(0); }
+    .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+    .btn.secondary {
+      background: var(--glass);
+      color: #e2e8f0;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      -webkit-backdrop-filter: blur(8px);
+              backdrop-filter: blur(8px);
+    }
+    .btn.secondary::after { background: linear-gradient(110deg, transparent, rgba(56, 189, 248, 0.18), transparent); }
+    .btn.secondary:hover {
+      border-color: var(--line-strong);
+      color: #f8fafc;
+      box-shadow: 0 8px 22px rgba(2, 6, 23, 0.5), 0 0 18px rgba(56, 189, 248, 0.18);
+    }
+
+    .info-menu {
+      border-color: var(--line);
+      background: rgba(11, 19, 37, 0.95);
+      -webkit-backdrop-filter: blur(14px);
+              backdrop-filter: blur(14px);
+      animation: ui-fade-up 0.2s ease both;
+    }
+
+    /* Section cards */
+    main { padding-top: 26px; }
+    .grid { gap: 20px; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01) 40%),
+        rgba(13, 20, 38, 0.72);
+      -webkit-backdrop-filter: blur(14px);
+              backdrop-filter: blur(14px);
+      box-shadow: 0 16px 36px rgba(2, 6, 23, 0.5);
+      transition: transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s ease, border-color 0.3s ease;
+      animation: ui-card-in 0.7s cubic-bezier(.2,.8,.2,1) backwards;
+    }
+    .card:nth-child(1) { animation-delay: 0.15s; }
+    .card:nth-child(2) { animation-delay: 0.22s; }
+    .card:nth-child(3) { animation-delay: 0.29s; }
+    .card:nth-child(4) { animation-delay: 0.36s; }
+    .card:nth-child(5) { animation-delay: 0.43s; }
+    .card:nth-child(6) { animation-delay: 0.50s; }
+    .card:nth-child(7) { animation-delay: 0.57s; }
+    .card:nth-child(n+8) { animation-delay: 0.64s; }
+    @keyframes ui-card-in {
+      from { opacity: 0; transform: translateY(18px) scale(0.98); }
+      to   { opacity: 1; transform: none; }
+    }
+    /* Animated neon edge on top of each card */
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--violet), transparent);
+      background-size: 200% 100%;
+      opacity: 0.55;
+      animation: ui-edge 6s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes ui-edge { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    .card::after {
+      transition: transform 0.6s ease, opacity 0.4s ease;
+      opacity: 0.8;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: var(--line-strong);
+      box-shadow: var(--glow);
+    }
+    .card:hover::before { opacity: 1; }
+    .card:hover::after { transform: rotate(15deg) translate(-30px, 30px) scale(1.25); opacity: 1; }
+
+    .card header { gap: 10px; }
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      border: 1px solid currentColor;
+      border-color: color-mix(in srgb, currentColor 35%, transparent);
+      box-shadow: 0 0 16px color-mix(in srgb, currentColor 22%, transparent);
+      transition: transform 0.3s ease;
+    }
+    .card:hover .card-icon { transform: scale(1.08) rotate(-4deg); }
+    .title { font-size: 1.06rem; color: #f8fafc; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      font-size: 0.74rem;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      border-color: rgba(148, 163, 184, 0.2);
+      background: rgba(148, 163, 184, 0.08);
+      color: var(--muted);
+    }
+    .status::before {
+      content: "";
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      flex-shrink: 0;
+    }
+    .status.ontrack { border-color: rgba(34, 197, 94, 0.35); }
+    .status.atrisk  { border-color: rgba(245, 158, 11, 0.35); }
+    .status.delayed { border-color: rgba(239, 68, 68, 0.35); }
+    .status.ontrack::before, .status.atrisk::before, .status.delayed::before { animation: ui-blink 2.4s ease-in-out infinite; }
+    @keyframes ui-blink { 50% { opacity: 0.35; } }
+
+    .meta {
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.84rem;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(2, 6, 23, 0.35);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    .progress-value .label {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+    }
+    .progress-value .percent {
+      font-size: 1.5rem;
+      font-variant-numeric: tabular-nums;
+      color: #e0f2fe;
+      text-shadow: 0 0 16px rgba(56, 189, 248, 0.55);
+    }
+    .progress-bar {
+      height: 10px;
+      background: rgba(2, 6, 23, 0.6);
+      border-color: rgba(148, 163, 184, 0.14);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    .progress-fill {
+      position: relative;
+      background: linear-gradient(90deg, #3b82f6, #22d3ee, #a78bfa);
+      background-size: 200% 100%;
+      box-shadow: 0 0 12px rgba(34, 211, 238, 0.55);
+      transition: width 900ms cubic-bezier(.2,.8,.2,1);
+      animation: ui-flow 4s linear infinite;
+    }
+    .progress-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+      background-size: 50% 100%;
+      background-repeat: no-repeat;
+      animation: ui-shimmer 2.2s ease-in-out infinite;
+    }
+    @keyframes ui-flow { to { background-position: -200% 0; } }
+    @keyframes ui-shimmer {
+      from { background-position: -100% 0; }
+      to   { background-position: 200% 0; }
+    }
+
+    .controls.single .btn { width: 100%; }
+    .footnote {
+      padding-top: 12px;
+      border-top: 1px dashed rgba(148, 163, 184, 0.14);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    /* Bottom action dock */
+    .page-actions {
+      margin-top: 36px;
+      padding: 18px;
+      gap: 12px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(12px);
+              backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+      animation: ui-fade-up 0.6s 0.6s ease backwards;
+    }
+
+    .empty-state {
+      border-color: var(--line-strong);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(10px);
+              backdrop-filter: blur(10px);
+    }
+
+    @keyframes ui-fade-up   { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes ui-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 640px) {
+      .project-switcher { width: calc(100% - 32px); padding: 16px; }
+      body > header { padding: 22px 16px 8px; }
+      .brand { column-gap: 12px; }
+      .logo { width: 46px; height: 46px; }
+      .title-row { gap: 8px; }
+      .edit-title { width: 32px; height: 32px; }
+      main { padding-left: 16px; padding-right: 16px; }
+      .page-actions { margin-left: 16px; margin-right: 16px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media print {
+      @page { margin: 0; }
+      body {
+        background: #fff !important;
+        color: #0f172a !important;
+        padding: 12mm 10mm !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #agyRbacTopbar,
+      #agyChangePwdModal,
+      #agyToastContainer,
+      .no-print,
+      body > header,
+      .page-header,
+      .auth-actions,
+      .welcome-banner,
+      .project-switcher,
+      .controls,
+      footer {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+      }
+      main {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .card {
+        background: #fff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+      .card::after, .card::before, body::before, body::after, .progress-fill::after { display: none !important; }
+      .card, .project-switcher, .page-actions { animation: none !important; transform: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+      h1 { -webkit-text-fill-color: #0f172a !important; background: none !important; animation: none !important; }
+      .progress-fill { box-shadow: none !important; animation: none !important; }
+      .progress-value .percent { text-shadow: none !important; }
+      .meta { background: none !important; border-color: #e2e8f0 !important; }
+      .title, .percent, .subitem-title, .subitem-value { color: #0f172a !important; }
+      .desc, .footnote, .subitems-header, .overview-label { color: #475569 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-actions" role="region" aria-label="Active user message">
+    <p class="auth-message" id="pageTime">Today is —</p>
+    <p class="auth-message" id="activeUserMessage"> — Project Tracker Dashboard</p>
+  </div>
+  <div class="welcome-banner" id="welcomeBanner" role="status" aria-live="polite" hidden></div>
+  <div class="project-switcher" role="region" aria-label="Saved projects">
+    <div class="switcher-row">
+      <label class="sr-only" for="projectSelect">Saved projects</label>
+      <button class="btn secondary" id="sectionPickerToggle" aria-expanded="false" aria-controls="sectionPicker">Project Selection</button>
+      <select class="select" id="projectSelect" aria-label="Saved projects"></select>
+    </div>
+    <div class="switcher-row">
+      <label class="sr-only" for="newProjectInput">New project title</label>
+      <button class="btn" id="createProject">Create New Project</button>
+      <input class="input" type="text" id="newProjectInput" placeholder="Input Project Name" autocomplete="off" />
+    </div>
+    <p class="helper">Choose which sections to include in upcoming projects using Project Selection.</p>
+    <div class="section-picker" id="sectionPicker" hidden role="region" aria-label="Select sections">
+      <div class="section-picker__header">
+        <div>
+          <p class="section-picker__title">Include Sections</p>
+          <p class="section-picker__helper">Toggle sections below; checked entries become part of the next saved project.</p>
+        </div>
+        <button class="btn secondary" id="resetSections" type="button">Reset List</button>
+      </div>
+      <ul class="section-picker__list" id="sectionPickerList"></ul>
+      <div class="section-picker__actions">
+        <button class="btn secondary" id="closeSectionPicker" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <header>
+    <div class="brand">
+      <img class="logo" src="images/project_tracker_25p.png" alt="Project Tracker logo" width="52" height="52" />
+      <div>
+        <div class="title-row">
+          <h1 id="projectTitle">Project Developments</h1>
+          <button class="edit-title" id="editTitleBtn" aria-label="Edit project name" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92.83l-.83-.83 9.19-9.19.83.83-9.19 9.19zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+            </svg>
+          </button>
+        </div>
+        <form class="inline-title-editor" id="titleForm">
+          <label class="sr-only" for="titleInput">Project Title</label>
+          <input class="input" id="titleInput" type="text" placeholder="Edit current project title" autocomplete="off" />
+          <button class="btn" type="submit">Save</button>
+          <button class="btn secondary" type="button" id="cancelTitleEdit">Cancel</button>
+        </form>
+        <div class="subtitle">Live % completeness for key disciplines</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <span class="pill">Project Tracker: v1.0.2</span>
+      <span class="pill">Last update: <span id="lastUpdate">—</span></span>
+      <label class="pill" style="display:inline-flex;align-items:center;gap:8px;">
+        <span>Status:</span>
+        <select id="projectStatusSelect" style="background:#0f172a;color:#38bdf8;border:1px solid #334155;border-radius:6px;padding:3px 8px;font-weight:700;font-size:0.82rem;cursor:pointer;">
+          <option value="not_started">Not Started</option>
+          <option value="in_progress">In Progress</option>
+          <option value="on_hold">On Hold</option>
+          <option value="completed">Completed</option>
+        </select>
+      </label>
+      <div class="info-trigger">
+        <button class="btn secondary" id="projectInfoToggle" aria-expanded="false" aria-controls="projectInfoMenu">Project Info</button>
+        <div class="info-menu" id="projectInfoMenu" hidden></div>
+      </div>
+      <!-- Remove this button already have this Change password button in the header -->
+      <!-- <button class="btn secondary" id="changePasswordBtn" type="button">🔑 Change Password</button> -->
+      <button class="btn secondary" id="adminPortalBtn" type="button" hidden style="border-color:rgba(167,139,250,0.45);color:#c4b5fd;">🛡️ Admin &amp; Users</button>
+      <button class="btn secondary" id="backToOverview">Back to Overview</button>
+      <!-- Remove this button -->
+      <!-- <button class="btn secondary" id="logoutBtn">Logout</button> -->
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px;padding:12px 14px;background:rgba(15,23,42,0.75);border:1px solid #1e293b;border-radius:12px;">
+      <span style="font-size:0.82rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Portfolio Filter:</span>
+      <input class="input" id="projectSearchInput" type="search" placeholder="Search projects by name..." style="max-width:240px;padding:7px 11px;font-size:0.85rem;" />
+      <select class="select" id="projectFilterStatus" style="max-width:180px;padding:7px 11px;font-size:0.85rem;">
+        <option value="all">All Statuses</option>
+        <option value="not_started">Not Started</option>
+        <option value="in_progress">In Progress</option>
+        <option value="on_hold">On Hold</option>
+        <option value="completed">Completed</option>
+      </select>
+      <span id="projectFilterCount" style="font-size:0.82rem;color:#94a3b8;margin-left:auto;"></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid" id="cards">
+      <article class="card" data-key="electrical">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--electrical" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div class="title">Electrical</div>
+          </div>
+          <div class="status" id="status-electrical">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: E-Team</span>
+          <span>Scope: Lighting, Power and Controls</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-electrical">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Electrical progress">
+            <div class="progress-fill" id="bar-electrical"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="electrical">Open Section</button>
+        </div>
+        <div class="footnote">Panelboards, lighting fixtures, and addressable LED rollout status.</div>
+      </article>
+
+      <article class="card" data-key="architectural">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--architectural" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </div>
+            <div class="title">Architectural</div>
+          </div>
+          <div class="status" id="status-architectural">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: A-Team</span>
+          <span>Scope: Envelope, Interiors, Finishes</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-architectural">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Architectural progress">
+            <div class="progress-fill" id="bar-architectural"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="architectural">Open Section</button>
+        </div>
+        <div class="footnote">Envelope systems, interior fit-out, and public realm deliverables.</div>
+      </article>
+
+      <article class="card" data-key="mechanical">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--mechanical" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </div>
+            <div class="title">Mechanical</div>
+          </div>
+          <div class="status" id="status-mechanical">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: M-Team</span>
+          <span>Scope: HVAC, Plumbing, Fire Protection</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-mechanical">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Mechanical progress">
+            <div class="progress-fill" id="bar-mechanical"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="mechanical">Open Section</button>
+        </div>
+        <div class="footnote">Air systems, hydronics, suppression, and automation metrics.</div>
+      </article>
+      
+      <article class="card" data-key="plumbing">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--plumbing" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+            </div>
+            <div class="title">Plumbing</div>
+          </div>
+          <div class="status" id="status-plumbing">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: P-Team</span>
+          <span>Scope: Pipes, Fixtures, Valves</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-plumbing">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Plumbing progress">
+            <div class="progress-fill" id="bar-plumbing"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="plumbing">Open Section</button>
+        </div>
+        <div class="footnote">Water supply, drainage, and fixture installations tracked here.</div>
+      </article>
+
+      <article class="card" data-key="electronics">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--electronics" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M9 10h1v1H9zm0 2h1v1H9zm0 2h1v1H9zm4-4h1v1h-1zm0 2h1v1h-1zm0 2h1v1h-1zm-2-6h1v1h-1zm0 2h1v1h-1zm0 2h1v1h-1zm0 2h1v1h-1zM5 20V4h14v16H5zm2-18C5.9 2 5 2.9 5 4v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H7z"/></svg>
+            </div>
+            <div class="title">Electronics</div>
+          </div>
+          <div class="status" id="status-electronics">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: EL-Team</span>
+          <span>Scope: Circuitry, Devices, Controls</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-electronics">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Electronics progress">
+            <div class="progress-fill" id="bar-electronics"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="electronics">Open Section</button>
+        </div>
+        <div class="footnote">Circuitry, devices, and control systems monitored here.</div>
+      </article>
+
+      <article class="card" data-key="general">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--general" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div class="title">General</div>
+          </div>
+          <div class="status" id="status-general">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: G-Team</span>
+          <span>Scope: General project developments and miscellaneous tasks</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-general">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="General progress">
+            <div class="progress-fill" id="bar-general"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="general">Open Section</button>
+        </div>
+        <div class="footnote">General project developments and miscellaneous tasks monitored here.</div>
+      </article>
+
+      <article class="card" data-key="others">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--others" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div class="title">Others</div>
+          </div>
+          <div class="status" id="status-others">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: Others</span>
+          <span>Scope: Miscellaneous tasks and other developments</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-others">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Others progress">
+            <div class="progress-fill" id="bar-others"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="others">Open Section</button>
+        </div>
+        <div class="footnote">Miscellaneous tasks and other developments monitored here.</div>
+      </article>
+
+    </section>
+    <div class="page-actions">
+      <button class="btn" id="viewCompletedProjects">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Completed Projects
+      </button>
+      <button class="btn" id="viewLogs">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        View Logs
+      </button>
+      <button class="btn" id="modifyProject">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        Modify Project
+      </button>
+      <button class="btn" id="createGanttChart">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M3 3h2v18H3V3zm4 2h6v4H7V5zm0 6h10v4H7v-4zm0 6h8v4H7v-4z"/></svg>
+        Create Gantt Chart
+      </button>
+      <button class="btn" id="customSectionsBtn">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 3h3v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>
+        Custom Sections
+      </button>
+    </div>
+    <section class="empty-state" id="noActiveProjects" hidden>
+      <p>Every saved project is already 100% complete. Create a new project to keep tracking work or review final records under Completed Projects.</p>
+      <div class="empty-state__actions">
+        <button class="btn" id="emptyCompletedProjects" type="button">Completed Projects</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="state.js"></script>
+  <!-- Auth Guard -->
+  <script>
+    if (!window.ProjectData || !window.ProjectData.isAuthenticated()) {
+      window.location.href = 'login.html';
+    }
+  </script>
+  <script>
+    (function () {
+      const {
+        SECTION_ORDER,
+        SECTION_DEFS,
+        isCustomSection,
+        getSectionDisplayName,
+        loadProjectState,
+        persistProjectState,
+        fmtDate,
+        statusClass,
+        getSectionPercent,
+        getActiveProject,
+        setActiveProject,
+        addProject,
+        listProjects,
+        touchProject,
+        isSectionEnabled,
+        isProjectCompleted,
+        getActiveUserName,
+        appendUpdateLog
+      } = window.ProjectData;
+
+      const SECTION_MANAGER_ROUTES = {
+        electrical: 'e_manage_subitems.html',
+        architectural: 'a_manage_subitems.html',
+        mechanical: 'm_manage_subitems.html',
+        plumbing: 'p_manage_subitems.html',
+        electronics: 'el_manage_subitems.html',
+        general: 'g_manage_subitems.html',
+        others: 'o_manage_subitems.html',
+      };
+
+      let state = null;
+
+      const AUTH_KEY = 'projectDashboardAuth';
+      const LOGIN_PAGE = 'login.html';
+      const WELCOME_KEY = 'projectDashboardWelcomeName';
+
+      const isAuthenticated = () => window.ProjectData && window.ProjectData.isAuthenticated();
+
+      const redirectToLogin = () => {
+        console.log('🔄 Redirecting to login page...');
+        const target = encodeURIComponent(window.location.href);
+        window.location.href = `${LOGIN_PAGE}?redirect=${target}`;
+      };
+
+      const ensureAuthenticated = () => {
+        const isAuth = isAuthenticated();
+        console.log('🔐 ensureAuthenticated result:', isAuth);
+        if (isAuth) { return true; }
+        redirectToLogin();
+        return false;
+      };
+
+      const FALLBACK_SECTION_KEYS = ['electrical', 'architectural', 'mechanical', 'plumbing', 'general', 'others'];
+      const FALLBACK_METADATA = {
+        electrical: {
+          title: 'Electrical Section',
+          summary: 'Power distribution, lighting, and control scopes.'
+        },
+        architectural: {
+          title: 'Architectural Section',
+          summary: 'Envelope, interior finishes, and public realm.'
+        },
+        mechanical: {
+          title: 'Mechanical Section',
+          summary: 'HVAC, plumbing, and fire protection packages.'
+        },
+        plumbing: {
+          title: 'Plumbing Section',
+          summary: 'Water supply, drainage, and related systems.'
+        },
+        general: {
+          title: 'General Section',
+          summary: 'Cross-disciplinary items and overall project health.'
+        },
+        others: {
+          title: 'Other Section',
+          summary: 'Additional workstreams that do not fit main categories.'
+        },
+        custom: {
+          title: 'Custom Section',
+          summary: 'Custom workstreams require extra setup (coming soon).'
+        }
+      };
+
+      const dedupeKeys = (list = []) => Array.from(new Set((list || []).filter(Boolean)));
+      const getBaseSectionKeys = () => {
+        const source = Array.isArray(SECTION_ORDER) && SECTION_ORDER.length
+          ? SECTION_ORDER
+          : FALLBACK_SECTION_KEYS;
+        const sanitized = dedupeKeys(source);
+        return sanitized.length ? sanitized : [...FALLBACK_SECTION_KEYS];
+      };
+
+      let selectedSections = getBaseSectionKeys();
+
+      const buildPickerEntries = () => {
+        const keys = getBaseSectionKeys();
+        const entries = keys.map((key) => {
+          const definition = SECTION_DEFS && SECTION_DEFS[key];
+          const fallback = FALLBACK_METADATA[key];
+          const title = definition?.title
+            ? getSectionDisplayName(key)
+            : fallback?.title || `${key} Section`;
+          const summary = definition?.summary || fallback?.summary || 'Track progress for this workstream.';
+          return { key, title, summary, disabled: false };
+        });
+
+        return entries;
+      };
+
+      const enforceSelectionGuard = (entries) => {
+        const allowed = entries.filter((entry) => !entry.disabled).map((entry) => entry.key);
+        const filtered = dedupeKeys(selectedSections).filter((key) => allowed.includes(key));
+        selectedSections = filtered.length ? filtered : [...allowed];
+      };
+
+      const handleSectionToggle = (key, checked, checkbox) => {
+        if (checked) {
+          if (!selectedSections.includes(key)) {
+            selectedSections = dedupeKeys([...selectedSections, key]);
+          }
+          render();
+          return;
+        }
+        if (selectedSections.length === 1) {
+          checkbox.checked = true;
+          alert('At least one section must remain selected.');
+          return;
+        }
+        selectedSections = selectedSections.filter((value) => value !== key);
+        render();
+      };
+
+      const renderSectionPicker = () => {
+        const list = document.getElementById('sectionPickerList');
+        if (!list) { return; }
+        const entries = buildPickerEntries();
+        enforceSelectionGuard(entries);
+        list.innerHTML = entries.map((entry) => {
+          const checkboxId = `section-check-${entry.key}`;
+          return `
+            <li class="section-picker__item">
+              <label class="section-picker__label" for="${checkboxId}">
+                <input type="checkbox" class="check" id="${checkboxId}" data-section="${entry.key}" ${entry.disabled ? 'disabled' : ''} />
+                ${entry.title}
+              </label>
+              <span class="section-picker__meta">${entry.summary}</span>
+            </li>
+          `;
+        }).join('') + `
+            <li class="section-picker__item">
+              <a class="section-picker__label" href="custom_sections.html">＋ Create a custom section…</a>
+              <span class="section-picker__meta">Add your own section, e.g. Operations or Mechanical Section no.2.</span>
+            </li>`;
+
+        entries.forEach((entry) => {
+          const checkbox = document.getElementById(`section-check-${entry.key}`);
+          if (!checkbox) { return; }
+          checkbox.checked = selectedSections.includes(entry.key) && !entry.disabled;
+          checkbox.addEventListener('change', () => handleSectionToggle(entry.key, checkbox.checked, checkbox));
+        });
+      };
+
+      const closeSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        const toggle = document.getElementById('sectionPickerToggle');
+        if (!picker) { return; }
+        if (!picker.hasAttribute('hidden')) {
+          picker.setAttribute('hidden', '');
+        }
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      const openSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        const toggle = document.getElementById('sectionPickerToggle');
+        if (!picker) { return; }
+        renderSectionPicker();
+        picker.removeAttribute('hidden');
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      const toggleSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        if (!picker) { return; }
+        if (picker.hasAttribute('hidden')) {
+          openSectionPicker();
+        } else {
+          closeSectionPicker();
+        }
+      };
+
+      const getPendingSectionSelection = () => {
+        const allowed = new Set(getBaseSectionKeys());
+        return dedupeKeys(selectedSections).filter((key) => allowed.has(key));
+      };
+
+      const renderInfoMenu = (project, selectionFilter) => {
+        const menu = document.getElementById('projectInfoMenu');
+        if (!menu) { return; }
+        if (!project) {
+          menu.innerHTML = '';
+          return;
+        }
+        const allowedKeys = SECTION_ORDER.filter((key) => {
+          const enabled = isSectionEnabled(project, key);
+          const selectionAllowed = !selectionFilter || selectionFilter.has(key);
+          return enabled && selectionAllowed;
+        });
+
+        if (!allowedKeys.length) {
+          menu.innerHTML = '<button class="menu-item" type="button" disabled>No sections selected</button>';
+          return;
+        }
+
+        menu.innerHTML = allowedKeys.map((key) => {
+          const definition = SECTION_DEFS && SECTION_DEFS[key];
+          const label = getSectionDisplayName(key);
+          const route = definition?.file || `${key}.html`;
+          return `<button class="menu-item" data-route="${route}">${label}</button>`;
+        }).join('');
+      };
+
+      const computeSelectionFilter = () => {
+        const pending = getPendingSectionSelection();
+        const base = getBaseSectionKeys();
+        if (pending.length === base.length) {
+          const baseSet = new Set(base);
+          const differs = pending.some((key) => !baseSet.has(key));
+          if (!differs) {
+            return null;
+          }
+        }
+        return new Set(pending);
+      };
+
+      const getEditableProjects = () => listProjects(state)
+        .filter((project) => !isProjectCompleted(project));
+
+      const currentProject = () => {
+        const active = getActiveProject(state);
+        if (active && !isProjectCompleted(active)) {
+          return active;
+        }
+        const fallback = getEditableProjects()[0];
+        if (fallback) {
+          setActiveProject(state, fallback.id);
+          persistProjectState(state);
+          return fallback;
+        }
+        return null;
+      };
+
+      let isEditingTitle = false;
+
+      const applyTitleEditorState = () => {
+        const form = document.getElementById('titleForm');
+        if (form) {
+          form.classList.toggle('active', isEditingTitle);
+        }
+        const editButton = document.getElementById('editTitleBtn');
+        if (editButton) {
+          editButton.setAttribute('aria-pressed', isEditingTitle ? 'true' : 'false');
+        }
+      };
+
+      const openTitleEditor = () => {
+        isEditingTitle = true;
+        applyTitleEditorState();
+        const input = document.getElementById('titleInput');
+        if (input) {
+          window.requestAnimationFrame(() => {
+            input.focus();
+            input.select();
+          });
+        }
+      };
+
+      const closeTitleEditor = () => {
+        isEditingTitle = false;
+        applyTitleEditorState();
+        const input = document.getElementById('titleInput');
+        const project = currentProject();
+        if (input && project) {
+          input.value = project.title;
+        }
+      };
+
+      const toggleEmptyState = (hasProject) => {
+        const cards = document.getElementById('cards');
+        const actions = document.querySelector('.page-actions');
+        const emptyState = document.getElementById('noActiveProjects');
+        const editButton = document.getElementById('editTitleBtn');
+        const infoToggle = document.getElementById('projectInfoToggle');
+        if (cards) {
+          cards.toggleAttribute('hidden', !hasProject);
+        }
+        if (actions) {
+          actions.toggleAttribute('hidden', !hasProject);
+        }
+        if (emptyState) {
+          emptyState.toggleAttribute('hidden', hasProject);
+        }
+        if (editButton) {
+          editButton.disabled = !hasProject;
+        }
+        if (infoToggle) {
+          infoToggle.disabled = !hasProject;
+        }
+      };
+
+      const showWelcomeMessage = () => {
+        const banner = document.getElementById('welcomeBanner');
+        if (!banner) { return; }
+        let welcomeName = '';
+        try {
+          if (window.sessionStorage) {
+            welcomeName = window.sessionStorage.getItem(WELCOME_KEY) || '';
+          }
+        } catch (error) {
+          welcomeName = '';
+        }
+
+        if (welcomeName) {
+          banner.textContent = `Welcome ${welcomeName} you can now update the Project Dashboard`;
+          banner.classList.add('active');
+          banner.removeAttribute('hidden');
+          try {
+            window.sessionStorage && window.sessionStorage.removeItem(WELCOME_KEY);
+          } catch (error) {
+            // ignore storage removal issues
+          }
+        } else {
+          banner.classList.remove('active');
+          banner.setAttribute('hidden', '');
+          banner.textContent = '';
+        }
+      };
+
+      const renderActiveUserMessage = () => {
+        const banner = document.getElementById('activeUserMessage');
+        if (!banner) { return; }
+        const username = getActiveUserName() || 'User';
+        banner.textContent = `${username} - Project Dashboard`;
+      };
+      
+      // Make it globally accessible for auth state change
+      window.renderActiveUserMessage = renderActiveUserMessage;
+
+      const syncProjectSelect = (activeProject) => {
+        const select = document.getElementById('projectSelect');
+        if (!select) { return; }
+        const searchTerm = (document.getElementById('projectSearchInput')?.value || '').trim().toLowerCase();
+        const statusFilter = document.getElementById('projectFilterStatus')?.value || 'all';
+        const allProjs = listProjects(state);
+        const projects = allProjs.filter((project) => {
+          const pStatus = project.status || (isProjectCompleted(project) ? 'completed' : 'in_progress');
+          if (statusFilter === 'all') {
+            if (isProjectCompleted(project) && pStatus === 'completed') return false;
+          } else if (pStatus !== statusFilter) {
+            return false;
+          }
+          if (searchTerm && !String(project.title || '').toLowerCase().includes(searchTerm)) {
+            return false;
+          }
+          return true;
+        });
+
+        const countEl = document.getElementById('projectFilterCount');
+        if (countEl) {
+          countEl.textContent = `${projects.length} matching project${projects.length === 1 ? '' : 's'}`;
+        }
+
+        if (!projects.length) {
+          select.innerHTML = '<option value="" disabled>No matching projects available</option>';
+          select.value = '';
+          select.disabled = true;
+          return;
+        }
+        select.disabled = false;
+        select.innerHTML = projects
+          .map((project) => `<option value="${project.id}">${project.title} [${(project.status || 'in_progress').replace('_', ' ').toUpperCase()}]</option>`)
+          .join('');
+        if (activeProject && projects.some(p => p.id === activeProject.id)) {
+          select.value = activeProject.id;
+        } else {
+          select.value = projects[0].id;
+        }
+      };
+
+
+      // Cards for user-defined custom sections, built to match the static section cards above
+      const CUSTOM_CARD_ICON = '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 3h3v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>';
+      const renderCustomSectionCards = () => {
+        const grid = document.getElementById('cards');
+        if (!grid) { return; }
+        const customKeys = SECTION_ORDER.filter((key) => isCustomSection(key));
+        grid.querySelectorAll('[data-custom-card]').forEach((card) => {
+          if (!customKeys.includes(card.getAttribute('data-key'))) { card.remove(); }
+        });
+        customKeys.forEach((key) => {
+          const def = SECTION_DEFS[key];
+          let card = grid.querySelector(`[data-key="${key}"]`);
+          if (!card) {
+            card = document.createElement('article');
+            card.className = 'card';
+            card.setAttribute('data-key', key);
+            card.setAttribute('data-custom-card', 'true');
+            card.innerHTML = `
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--${key}" aria-hidden="true">${CUSTOM_CARD_ICON}</div>
+            <div class="title"></div>
+          </div>
+          <div class="status" id="status-${key}">—</div>
+        </header>
+        <div class="meta">
+          <span data-f="lead"></span>
+          <span data-f="scope"></span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-${key}">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="bar-${key}"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="${key}">Open Section</button>
+        </div>
+        <div class="footnote"></div>`;
+            grid.appendChild(card);
+          }
+          // User-entered text is set with textContent
+          card.querySelector('.title').textContent = def.title;
+          card.querySelector('[data-f="lead"]').textContent = `Lead: ${def.lead || '—'}`;
+          card.querySelector('[data-f="scope"]').textContent = `Scope: ${def.scope || '—'}`;
+          card.querySelector('.progress-bar').setAttribute('aria-label', `${def.title} progress`);
+          card.querySelector('.footnote').textContent = def.summary || '';
+        });
+      };
+
+      const render = () => {
+        renderCustomSectionCards();
+        const project = currentProject();
+        const hasProject = Boolean(project);
+        toggleEmptyState(hasProject);
+        const selectionFilter = computeSelectionFilter();
+        if (!project) {
+          const titleEl = document.getElementById('projectTitle');
+          if (titleEl) { titleEl.textContent = 'No active project'; }
+          const lastUpdateEl = document.getElementById('lastUpdate');
+          if (lastUpdateEl) { lastUpdateEl.textContent = '—'; }
+          const input = document.getElementById('titleInput');
+          if (input && !isEditingTitle) {
+            input.value = '';
+          }
+          renderInfoMenu(null, selectionFilter);
+          applyTitleEditorState();
+          syncProjectSelect(null);
+          return;
+        }
+        SECTION_ORDER.forEach((key) => {
+          const card = document.querySelector(`[data-key="${key}"]`);
+          const enabled = isSectionEnabled(project, key);
+          const selectionAllowed = !selectionFilter || selectionFilter.has(key);
+          const showCard = enabled && selectionAllowed;
+
+          if (card) {
+            if (showCard) {
+              card.removeAttribute('hidden');
+              card.setAttribute('aria-hidden', 'false');
+            } else {
+              card.setAttribute('hidden', '');
+              card.setAttribute('aria-hidden', 'true');
+            }
+          }
+
+          if (!showCard) { return; }
+
+          const section = project.sections[key];
+          const pct = getSectionPercent(section);
+
+          const bar = document.getElementById(`bar-${key}`);
+          const label = document.getElementById(`percent-${key}`);
+          const status = document.getElementById(`status-${key}`);
+
+          if (bar) { bar.style.width = pct + '%'; }
+          if (label) { label.textContent = pct + '%'; }
+          if (status) {
+            const st = statusClass(pct);
+            status.textContent = st.text;
+            status.classList.remove('ontrack', 'atrisk', 'delayed');
+            status.classList.add(st.cls);
+          }
+
+          const footnote = card ? card.querySelector('.footnote') : null;
+          if (footnote && section && section.summary) {
+            footnote.textContent = section.summary;
+          }
+        });
+
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl) {
+          lastUpdateEl.textContent = fmtDate(new Date(project.lastUpdate));
+        }
+
+        const titleEl = document.getElementById('projectTitle');
+        if (titleEl) { titleEl.textContent = project.title; }
+
+        const statusSelect = document.getElementById('projectStatusSelect');
+        if (statusSelect) {
+          statusSelect.value = project.status || (isProjectCompleted(project) ? 'completed' : 'in_progress');
+        }
+
+        const input = document.getElementById('titleInput');
+        if (input && !isEditingTitle) {
+          input.value = project.title;
+        }
+
+        applyTitleEditorState();
+
+        renderInfoMenu(project, selectionFilter);
+        syncProjectSelect(project);
+      };
+
+      const saveAndRender = async () => {
+        console.log('💾 saveAndRender called');
+        try {
+          await persistProjectState(state);
+          console.log('✅ State persisted successfully');
+        } catch (error) {
+          console.error('❌ Failed to persist state:', error);
+        }
+        render();
+      };
+
+      const wire = () => {
+        const editTitleBtn = document.getElementById('editTitleBtn');
+        if (editTitleBtn) {
+          editTitleBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (isEditingTitle) {
+              closeTitleEditor();
+            } else {
+              openTitleEditor();
+            }
+          });
+        }
+
+        const titleForm = document.getElementById('titleForm');
+        if (titleForm) {
+          titleForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!ensureAuthenticated()) { return; }
+            const input = document.getElementById('titleInput');
+            if (!input) { return; }
+            const value = input.value.trim();
+            if (!value) {
+              alert('Please enter a project title.');
+              return;
+            }
+            const project = currentProject();
+            if (!project) { return; }
+            project.title = value;
+            touchProject(project);
+            closeTitleEditor();
+            await saveAndRender();
+          });
+        }
+
+        const cancelTitleEdit = document.getElementById('cancelTitleEdit');
+        if (cancelTitleEdit) {
+          cancelTitleEdit.addEventListener('click', (event) => {
+            event.preventDefault();
+            closeTitleEditor();
+          });
+        }
+
+        document.querySelectorAll('[data-open]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const key = button.getAttribute('data-open');
+            const project = currentProject();
+            if (!project) {
+              alert('All saved projects are complete. Create a new project to keep editing sections.');
+              return;
+            }
+            const section = project.sections[key];
+            const route = SECTION_MANAGER_ROUTES[key] || section?.file || `${key}.html`;
+            window.location.href = route;
+          });
+        });
+
+        const toggle = document.getElementById('projectInfoToggle');
+        const menu = document.getElementById('projectInfoMenu');
+
+        const closeMenu = () => {
+          if (!menu) { return; }
+          if (!menu.hasAttribute('hidden')) {
+            menu.setAttribute('hidden', '');
+          }
+          if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+          }
+        };
+
+        if (toggle && menu) {
+          toggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (menu.hasAttribute('hidden')) {
+              menu.removeAttribute('hidden');
+              toggle.setAttribute('aria-expanded', 'true');
+            } else {
+              closeMenu();
+            }
+          });
+
+          menu.addEventListener('click', (event) => event.stopPropagation());
+          document.addEventListener('click', closeMenu);
+        }
+
+        if (menu) {
+          menu.addEventListener('click', (event) => {
+            const target = event.target.closest('[data-route]');
+            if (!target) { return; }
+            event.preventDefault();
+            const route = target.getAttribute('data-route');
+            closeMenu();
+            if (route) {
+              window.location.href = route;
+            }
+          });
+        }
+
+        const projectSelect = document.getElementById('projectSelect');
+        if (projectSelect) {
+          projectSelect.addEventListener('change', async () => {
+            if (projectSelect.disabled) { return; }
+            setActiveProject(state, projectSelect.value);
+            closeTitleEditor();
+            await saveAndRender();
+          });
+        }
+
+        const createProjectBtn = document.getElementById('createProject');
+        if (createProjectBtn) {
+          createProjectBtn.addEventListener('click', async () => {
+            try {
+              console.log('🔵 Create Project button clicked');
+              
+              console.log('🔍 Checking authentication...');
+              if (!ensureAuthenticated()) { 
+                console.log('❌ Authentication check failed');
+                return; 
+              }
+              console.log('✅ Authentication check passed');
+              
+              const input = document.getElementById('newProjectInput');
+              if (!input) { 
+                console.log('❌ Input element not found');
+                return; 
+              }
+              
+              const value = input.value.trim();
+              console.log('📝 Project title:', value);
+              
+              if (!value) {
+                console.log('⚠️ No project title entered');
+                alert('Please enter a project title to save.');
+                return;
+              }
+              
+              const pendingSections = getPendingSectionSelection();
+              console.log('📋 Pending sections:', pendingSections);
+              
+              if (!pendingSections.length) {
+                console.log('⚠️ No sections selected');
+                alert('Select at least one section before creating a project.');
+                return;
+              }
+              
+              const template = currentProject();
+              console.log('📄 Template project:', template);
+              
+              console.log('🚀 Adding project to state...');
+              addProject(state, value, template, pendingSections);
+              console.log('✅ Project added to state:', state.activeProjectId);
+              
+              const username = getActiveUserName() || 'Unknown user';
+              console.log('👤 Username:', username);
+              
+              console.log('📝 Appending update log...');
+              appendUpdateLog({
+                action: 'project-created',
+                user: username,
+                project: value
+              });
+              
+              input.value = '';
+              console.log('💾 Saving and rendering...');
+              await saveAndRender();
+              console.log('✅ Project creation complete!');
+              console.log('Active project:', state.activeProjectId);
+              console.log('Total projects:', Object.keys(state.projects).length);
+              
+            } catch (error) {
+              console.error('❌ Error creating project:', error);
+              console.error('Error stack:', error.stack);
+              alert('Failed to create project. Check console for details.');
+            }
+          });
+        }
+
+        const pickerToggle = document.getElementById('sectionPickerToggle');
+        if (pickerToggle) {
+          pickerToggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            toggleSectionPicker();
+          });
+        }
+
+        const closePickerBtn = document.getElementById('closeSectionPicker');
+        if (closePickerBtn) {
+          closePickerBtn.addEventListener('click', () => {
+            closeSectionPicker();
+          });
+        }
+
+        const resetPickerBtn = document.getElementById('resetSections');
+        if (resetPickerBtn) {
+          resetPickerBtn.addEventListener('click', () => {
+            selectedSections = getBaseSectionKeys();
+            renderSectionPicker();
+            render();
+          });
+        }
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closeSectionPicker();
+            if (isEditingTitle) {
+              closeTitleEditor();
+            }
+          }
+        });
+
+        const backToOverviewBtn = document.getElementById('backToOverview');
+        if (backToOverviewBtn) {
+          backToOverviewBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
+          });
+        }
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', async () => {
+            try {
+              window.ProjectData.logout();
+              window.location.href = 'login.html';
+            } catch (error) {
+              console.error('Logout error:', error);
+              alert('Failed to logout. Please try again.');
+            }
+          });
+        }
+
+        const viewLogsBtn = document.getElementById('viewLogs');
+        if (viewLogsBtn) {
+          viewLogsBtn.addEventListener('click', () => {
+            window.location.href = 'user_update_logs.html';
+          });
+        }
+
+        const modifyProjectBtn = document.getElementById('modifyProject');
+        if (modifyProjectBtn) {
+          modifyProjectBtn.addEventListener('click', () => {
+            if (!ensureAuthenticated()) { return; }
+            window.location.href = 'delete_project.html';
+          });
+        }
+
+        const customSectionsBtn = document.getElementById('customSectionsBtn');
+        if (customSectionsBtn) {
+          customSectionsBtn.addEventListener('click', () => {
+            if (!ensureAuthenticated()) { return; }
+            window.location.href = 'custom_sections.html';
+          });
+        }
+        const createGanttBtn = document.getElementById('createGanttChart');
+        if (createGanttBtn) {
+          createGanttBtn.addEventListener('click', () => {
+            if (!ensureAuthenticated()) { return; }
+            const proj = currentProject();
+            window.location.href = proj ? `gantt_chart_creator.html?project_id=${encodeURIComponent(proj.id)}` : 'gantt_chart_creator.html';
+          });
+        }
+
+        const statusSelect = document.getElementById('projectStatusSelect');
+        if (statusSelect) {
+          statusSelect.addEventListener('change', async () => {
+            if (!ensureAuthenticated()) { return; }
+            const project = currentProject();
+            if (!project) { return; }
+            project.status = statusSelect.value;
+            touchProject(project, { preserveStatus: true });
+            try {
+              const headers = { 'Content-Type': 'application/json' };
+              const apiKey = window.ProjectData.getApiKey && window.ProjectData.getApiKey();
+              const token = window.ProjectData.getSessionToken && window.ProjectData.getSessionToken();
+              if (apiKey) headers['X-API-Key'] = apiKey;
+              if (token) headers['Authorization'] = `Bearer ${token}`;
+              await fetch(`api/projects/${encodeURIComponent(project.id)}`, {
+                method: 'PATCH',
+                headers,
+                body: JSON.stringify({ status: statusSelect.value })
+              });
+              if (window.ProjectData.showToast) {
+                window.ProjectData.showToast(`Project status updated to ${statusSelect.value.replace('_', ' ')}`, 'success');
+              }
+            } catch (_) {}
+            await saveAndRender();
+          });
+        }
+
+        const searchInput = document.getElementById('projectSearchInput');
+        if (searchInput) {
+          searchInput.addEventListener('input', () => syncProjectSelect(currentProject()));
+        }
+
+        const filterStatus = document.getElementById('projectFilterStatus');
+        if (filterStatus) {
+          filterStatus.addEventListener('change', () => syncProjectSelect(currentProject()));
+        }
+
+        const changePwdBtn = document.getElementById('changePasswordBtn');
+        if (changePwdBtn) {
+          changePwdBtn.addEventListener('click', () => {
+            if (window.ProjectData && window.ProjectData.openChangePasswordModal) {
+              window.ProjectData.openChangePasswordModal();
+            }
+          });
+        }
+
+        const adminPortalBtn = document.getElementById('adminPortalBtn');
+        if (adminPortalBtn) {
+          if (window.ProjectData && window.ProjectData.isAdmin && window.ProjectData.isAdmin()) {
+            adminPortalBtn.removeAttribute('hidden');
+          }
+          adminPortalBtn.addEventListener('click', () => {
+            window.location.href = 'admin_dashboard.html';
+          });
+        }
+
+        const completedProjectsBtn = document.getElementById('viewCompletedProjects');
+        if (completedProjectsBtn) {
+          completedProjectsBtn.addEventListener('click', () => {
+            window.location.href = 'completed_project.html';
+          });
+        }
+
+        const emptyStateCompletedBtn = document.getElementById('emptyCompletedProjects');
+        if (emptyStateCompletedBtn) {
+          emptyStateCompletedBtn.addEventListener('click', () => {
+            window.location.href = 'completed_project.html';
+          });
+        }
+
+        renderSectionPicker();
+        closeSectionPicker();
+      };
+
+      const updatePageTime = () => {
+        const timeEl = document.getElementById('pageTime');
+        if (!timeEl) { return; }
+        const now = new Date();
+        const formatted = now.toLocaleString(undefined, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        timeEl.textContent = `Today is ${formatted}`;
+      };
+
+      (async function() {
+        state = await loadProjectState();
+        selectedSections = getBaseSectionKeys();
+        render();
+        wire();
+        showWelcomeMessage();
+        renderActiveUserMessage();
+        updatePageTime();
+        setInterval(updatePageTime, 60000);
+        window.pageLoaded = true;
+      })();
+    })();
+  </script>
+</body>
+

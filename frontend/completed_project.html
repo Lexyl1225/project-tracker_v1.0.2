@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+  <title>Completed Projects — Project Developments</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #0b1325;
+      --card: #111827;
+      --border: #1e293b;
+      --border-strong: #334155;
+      --muted: #94a3b8;
+      --text: #f8fafc;
+      --accent: #38bdf8;
+      --accent-strong: #0284c7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1300px 650px at 20% 0%, #0b122a 0%, var(--bg) 60%, #090d18 100%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header.page-header {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 36px 24px 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+      letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-block p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 680px;
+      line-height: 1.5;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    main {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 24px 64px;
+      flex: 1;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    /* KPI Summary Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.85));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      margin: 6px 0 2px;
+      color: var(--text);
+    }
+
+    .kpi-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    /* Main Panel */
+    .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)), var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-toolbar-title h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .panel-toolbar-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .filter-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .input,
+    .select {
+      padding: 9px 13px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input {
+      min-width: 230px;
+    }
+
+    .input:focus,
+    .select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    /* Project Rows */
+    .project-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .project-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 20px;
+      align-items: center;
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(11, 19, 37, 0.85);
+      transition: border-color 0.18s ease, transform 0.18s ease;
+    }
+
+    .project-row:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    @media (max-width: 860px) {
+      .project-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .project-info {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .project-header-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .project-title {
+      margin: 0;
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-completed {
+      color: #4ade80;
+      background: rgba(34, 197, 94, 0.14);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .badge-partial {
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .badge-progress {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.38);
+    }
+
+    .progress-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 360px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #38bdf8, #22c55e);
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      min-width: 42px;
+    }
+
+    .project-meta {
+      color: var(--muted);
+      font-size: 0.83rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .section-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 4px 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.65);
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .chip strong {
+      color: var(--accent);
+    }
+
+    /* Right-side Action & Status Bar */
+    .project-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: nowrap;
+    }
+
+    @media (max-width: 680px) {
+      .project-actions {
+        flex-wrap: wrap;
+      }
+    }
+
+    .status-control-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-strong);
+      padding: 6px 8px 6px 12px;
+      border-radius: 12px;
+    }
+
+    .status-control-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: #090f1d;
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .status-select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 10px;
+      padding: 9px 15px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+      color: #082f49;
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+    }
+
+    .btn-apply {
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .btn-apply.changed {
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+      color: #082f49;
+      border-color: transparent;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-gantt {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: var(--accent);
+      font-size: 0.82rem;
+      padding: 9px 14px;
+    }
+
+    .btn-gantt:hover {
+      background: rgba(56, 189, 248, 0.18);
+    }
+
+    .empty {
+      margin: 0;
+      padding: 36px 24px;
+      text-align: center;
+      border: 1px dashed var(--border-strong);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* Status Change Confirmation Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9995;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid var(--border-strong);
+      border-radius: 18px;
+      max-width: 480px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      display: grid;
+      gap: 16px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.18rem;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .transition-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .transition-arrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    .modal-options {
+      display: grid;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+    }
+
+    .modal-options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.86rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    .modal-options input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    @media print {
+      @page { margin: 0; }
+      body {
+        background: #fff !important;
+        color: #0f172a !important;
+        padding: 12mm 10mm !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #agyRbacTopbar,
+      #agyChangePwdModal,
+      #agyToastContainer,
+      .no-print,
+      header,
+      header.page-header,
+      .page-header,
+      .header-actions,
+      .filter-controls,
+      .card-actions,
+      .modal-backdrop,
+      .toast,
+      .btn {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+      }
+      main {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .kpi-card,
+      .panel,
+      .completed-card {
+        background: #fff !important;
+        color: #111 !important;
+        border-color: #d1d5db !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+      .completed-card-title h3,
+      .panel-toolbar-title h2,
+      .kpi-value {
+        color: #111 !important;
+      }
+      .meta-row,
+      .panel-toolbar-title p,
+      .kpi-label,
+      .kpi-sub {
+        color: #4b5563 !important;
+      }
+      .section-chip {
+        background: #f9fafb !important;
+        border-color: #d1d5db !important;
+        color: #111 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="title-block">
+      <h1>✅ Completed Projects</h1>
+      <p>Review finalized initiatives, inspect their Gantt schedules, or change a project’s status to reopen it back into the active dashboard.</p>
+    </div>
+    <div class="header-actions">
+      <a class="btn btn-primary" href="user_index.html">📊 Active Projects Dashboard</a>
+      <button class="btn" id="backButton" type="button">🏠 Overview</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- KPI Summary Strip -->
+    <section class="kpi-grid" aria-label="Completed Project Metrics">
+      <div class="kpi-card">
+        <div class="kpi-label">Completed Projects</div>
+        <div class="kpi-value" id="kpiTotalCompleted">0</div>
+        <div class="kpi-sub">Archived in completed portfolio</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">100% Section Verified</div>
+        <div class="kpi-value" id="kpiFullComplete" style="color: var(--success);">0</div>
+        <div class="kpi-sub">Every enabled discipline at 100%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Marked Completed (&lt;100%)</div>
+        <div class="kpi-value" id="kpiManualComplete" style="color: var(--accent);">0</div>
+        <div class="kpi-sub">Manually closed before 100%</div>
+      </div>
+    </section>
+
+    <section class="panel" aria-live="polite">
+      <div class="panel-toolbar">
+        <div class="panel-toolbar-title">
+          <h2>Completed Portfolio &amp; Status Management</h2>
+          <p>Change any project’s status below to <strong>In Progress</strong>, <strong>On Hold</strong>, or <strong>Not Started</strong> to return it to active tracking.</p>
+        </div>
+        <div class="filter-controls">
+          <input type="search" class="input" id="searchInput" placeholder="Search completed projects..." aria-label="Search completed projects" />
+          <select class="select" id="completionFilter" aria-label="Filter by completion type">
+            <option value="all">All Completed Projects</option>
+            <option value="full">100% Verified Complete</option>
+            <option value="manual">Marked Complete (&lt;100%)</option>
+          </select>
+        </div>
+      </div>
+
+      <ul class="project-list" id="completedList"></ul>
+      <p class="empty" id="emptyState" hidden>No completed projects match the current filter.</p>
+    </section>
+  </main>
+
+  <!-- Status Change Confirmation Modal -->
+  <div class="modal-backdrop" id="statusChangeModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">Change Project Status</h3>
+        <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+      </div>
+      <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">
+        You are updating the status for <strong style="color: var(--text);" id="modalProjectTitle">—</strong>.
+      </p>
+      <div class="transition-box">
+        <div style="font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">Status Transition</div>
+        <div class="transition-arrow">
+          <span class="badge badge-completed">Completed</span>
+          <span style="color: var(--muted);">➔</span>
+          <span class="badge badge-progress" id="modalNewStatusBadge">In Progress</span>
+        </div>
+        <div style="font-size: 0.82rem; color: var(--muted);" id="modalProgressSummary">Current overall section completeness: 100%</div>
+      </div>
+      <div class="modal-options">
+        <label>
+          <input type="checkbox" id="optSetActiveProject" checked />
+          <span><strong>Set as Active Project</strong> so it is selected by default on the Projects Dashboard.</span>
+        </label>
+        <label>
+          <input type="checkbox" id="optRedirectDashboard" />
+          <span><strong>Open in Projects Dashboard</strong> immediately after saving.</span>
+        </label>
+        <label id="optResetProgressWrap">
+          <input type="checkbox" id="optResetProgress" />
+          <span><strong>Reset section progress to 0%</strong> across all enabled sections (leave unchecked to keep current progress).</span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="modalCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="modalConfirmBtn">Confirm Status Change</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="state.js"></script>
+  <!-- Auth Guard -->
+  <script>
+    if (!window.ProjectData || !window.ProjectData.isAuthenticated()) {
+      window.location.href = 'login.html';
+    }
+  </script>
+  <script>
+    (function () {
+      const {
+        listProjects,
+        loadProjectState,
+        persistProjectState,
+        setActiveProject,
+        touchProject,
+        appendUpdateLog,
+        getActiveUserName,
+        fmtDate,
+        SECTION_DEFS,
+        getEnabledSections,
+        getSectionPercent,
+        isProjectCompleted,
+        apiFetch,
+        showToast
+      } = window.ProjectData;
+
+      const STATUS_LABELS = {
+        completed: 'Completed',
+        in_progress: 'In Progress',
+        on_hold: 'On Hold',
+        not_started: 'Not Started'
+      };
+
+      const escapeHtml = (str = '') =>
+        String(str).replace(/[&<>"']/g, (c) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[c] || c));
+
+      let state = null;
+      let pendingChange = null;
+
+      const computeOverallPercent = (project) => {
+        const activeKeys = getEnabledSections(project);
+        if (!activeKeys.length) return 0;
+        const sum = activeKeys.reduce((acc, key) => {
+          const sec = project.sections ? project.sections[key] : null;
+          return acc + getSectionPercent(sec);
+        }, 0);
+        return Math.round(sum / activeKeys.length);
+      };
+
+      const isAllSectionsHundred = (project) => {
+        const activeKeys = getEnabledSections(project);
+        if (!activeKeys.length) return false;
+        return activeKeys.every((key) => {
+          const sec = project.sections ? project.sections[key] : null;
+          return sec && getSectionPercent(sec) >= 100;
+        });
+      };
+
+      const listEl = document.getElementById('completedList');
+      const emptyState = document.getElementById('emptyState');
+      const searchInput = document.getElementById('searchInput');
+      const completionFilter = document.getElementById('completionFilter');
+
+      const modal = document.getElementById('statusChangeModal');
+      const modalProjectTitle = document.getElementById('modalProjectTitle');
+      const modalNewStatusBadge = document.getElementById('modalNewStatusBadge');
+      const modalProgressSummary = document.getElementById('modalProgressSummary');
+      const optSetActiveProject = document.getElementById('optSetActiveProject');
+      const optRedirectDashboard = document.getElementById('optRedirectDashboard');
+      const optResetProgress = document.getElementById('optResetProgress');
+
+      const render = () => {
+        if (!state) return;
+        const allCompleted = listProjects(state).filter(isProjectCompleted);
+        const fullCount = allCompleted.filter(isAllSectionsHundred).length;
+        const manualCount = allCompleted.length - fullCount;
+
+        document.getElementById('kpiTotalCompleted').textContent = String(allCompleted.length);
+        document.getElementById('kpiFullComplete').textContent = String(fullCount);
+        document.getElementById('kpiManualComplete').textContent = String(manualCount);
+
+        const q = (searchInput?.value || '').trim().toLowerCase();
+        const filterMode = completionFilter?.value || 'all';
+
+        const filtered = allCompleted.filter((project) => {
+          const allHundred = isAllSectionsHundred(project);
+          if (filterMode === 'full' && !allHundred) return false;
+          if (filterMode === 'manual' && allHundred) return false;
+          if (q) {
+            const sectionNames = getEnabledSections(project)
+              .map((k) => SECTION_DEFS[k]?.title || k)
+              .join(' ');
+            const haystack = `${project.title || ''} ${project.description || ''} ${project.lastUpdatedBy || ''} ${sectionNames}`.toLowerCase();
+            if (!haystack.includes(q)) return false;
+          }
+          return true;
+        });
+
+        if (!filtered.length) {
+          listEl.innerHTML = '';
+          emptyState.removeAttribute('hidden');
+          emptyState.textContent = allCompleted.length
+            ? 'No completed projects match your current search or filter.'
+            : 'No projects are currently marked as Completed.';
+          return;
+        }
+
+        emptyState.setAttribute('hidden', '');
+        listEl.innerHTML = filtered.map((project) => {
+          const overallPct = computeOverallPercent(project);
+          const allHundred = isAllSectionsHundred(project);
+          const lastUpdate = project.lastUpdate ? fmtDate(new Date(project.lastUpdate)) : '—';
+          const updatedBy = project.lastUpdatedBy || 'System';
+
+          const sectionsHtml = getEnabledSections(project)
+            .map((key) => {
+              const title = SECTION_DEFS[key]?.title || key;
+              const secPct = getSectionPercent(project.sections ? project.sections[key] : null);
+              return `<span class="chip">${escapeHtml(title)} <strong>${secPct}%</strong></span>`;
+            })
+            .join('');
+
+          const completionBadge = allHundred
+            ? '<span class="badge badge-completed">✓ 100% Complete</span>'
+            : `<span class="badge badge-partial">Marked Completed · ${overallPct}% Progress</span>`;
+
+          return `
+            <li class="project-row" data-project-row="${escapeHtml(project.id)}">
+              <div class="project-info">
+                <div class="project-header-line">
+                  <h3 class="project-title">${escapeHtml(project.title)}</h3>
+                  ${completionBadge}
+                </div>
+                <div class="progress-strip">
+                  <div class="progress-track" aria-label="Overall project progress">
+                    <div class="progress-fill" style="width: ${overallPct}%;"></div>
+                  </div>
+                  <span class="progress-label">${overallPct}%</span>
+                </div>
+                <div class="project-meta">
+                  <span>Last updated: <strong>${escapeHtml(lastUpdate)}</strong></span>
+                  <span>Updated by: <strong>${escapeHtml(updatedBy)}</strong></span>
+                </div>
+                <div class="section-list">${sectionsHtml}</div>
+              </div>
+
+              <div class="project-actions">
+                <div class="status-control-group">
+                  <label class="status-control-label" for="status-select-${escapeHtml(project.id)}">Status</label>
+                  <select
+                    id="status-select-${escapeHtml(project.id)}"
+                    class="status-select"
+                    data-status-select="${escapeHtml(project.id)}"
+                    aria-label="Change status for ${escapeHtml(project.title)}"
+                  >
+                    <option value="completed" selected>✅ Completed</option>
+                    <option value="in_progress">⚡ In Progress (Reopen)</option>
+                    <option value="on_hold">⏸️ On Hold</option>
+                    <option value="not_started">🕓 Not Started</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-apply"
+                    data-apply-status="${escapeHtml(project.id)}"
+                    title="Apply selected status change"
+                  >
+                    Update Status
+                  </button>
+                </div>
+
+                <a class="btn btn-gantt" href="gantt_chart.html?id=${encodeURIComponent(project.id)}">
+                  📅 View Gantt Chart
+                </a>
+              </div>
+            </li>
+          `;
+        }).join('');
+      };
+
+      const openStatusModal = (projectId, newStatus) => {
+        const project = state?.projects?.[projectId];
+        if (!project) return;
+        if (newStatus === 'completed') {
+          if (showToast) {
+            showToast(`"${project.title}" is already marked as Completed. Select In Progress, On Hold, or Not Started to change its status.`, 'info');
+          }
+          return;
+        }
+
+        const overallPct = computeOverallPercent(project);
+        pendingChange = { projectId, newStatus };
+
+        modalProjectTitle.textContent = project.title;
+        modalNewStatusBadge.textContent = STATUS_LABELS[newStatus] || newStatus;
+        modalProgressSummary.textContent = `Current overall section completeness: ${overallPct}%`;
+
+        optSetActiveProject.checked = newStatus === 'in_progress';
+        optRedirectDashboard.checked = false;
+        optResetProgress.checked = false;
+
+        modal.classList.add('open');
+      };
+
+      const closeStatusModal = () => {
+        modal.classList.remove('open');
+        pendingChange = null;
+      };
+
+      const applyStatusChange = async () => {
+        if (!pendingChange || !state) return;
+        const { projectId, newStatus } = pendingChange;
+        const project = state.projects[projectId];
+        if (!project) {
+          closeStatusModal();
+          return;
+        }
+
+        const setActive = Boolean(optSetActiveProject.checked);
+        const redirectAfter = Boolean(optRedirectDashboard.checked);
+        const resetProgress = Boolean(optResetProgress.checked);
+
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        if (confirmBtn) {
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = 'Updating...';
+        }
+
+        try {
+          if (resetProgress && project.sections) {
+            Object.values(project.sections).forEach((sec) => {
+              if (sec && Array.isArray(sec.items)) {
+                sec.items.forEach((item) => {
+                  item.percent = 0;
+                });
+              }
+            });
+          }
+
+          project.status = newStatus;
+          touchProject(project, { preserveStatus: true });
+
+          if (setActive) {
+            setActiveProject(state, project.id);
+          }
+
+          // Persist via dedicated project status endpoint + full state sync
+          try {
+            await apiFetch(`projects/${encodeURIComponent(project.id)}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ status: newStatus })
+            });
+          } catch (patchErr) {
+            console.warn('PATCH /api/projects fallback to persistProjectState:', patchErr);
+          }
+
+          await persistProjectState(state);
+
+          appendUpdateLog({
+            action: `status-changed-to-${newStatus}`,
+            user: getActiveUserName(),
+            project: project.title,
+            item: `Status changed from Completed to ${STATUS_LABELS[newStatus] || newStatus}${resetProgress ? ' (progress reset to 0%)' : ''}`
+          });
+
+          closeStatusModal();
+          render();
+
+          if (showToast) {
+            showToast(`"${project.title}" status changed to ${STATUS_LABELS[newStatus] || newStatus}.`, 'success');
+          }
+
+          if (redirectAfter) {
+            setTimeout(() => {
+              window.location.href = 'user_index.html';
+            }, 450);
+          }
+        } catch (err) {
+          console.error('Failed to change project status:', err);
+          if (showToast) {
+            showToast(err.message || 'Failed to update project status.', 'error');
+          }
+        } finally {
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Status Change';
+          }
+        }
+      };
+
+      // Event Delegation on Completed List
+      listEl.addEventListener('change', (e) => {
+        const selectEl = e.target.closest('[data-status-select]');
+        if (!selectEl) return;
+        const pid = selectEl.getAttribute('data-status-select');
+        const applyBtn = listEl.querySelector(`[data-apply-status="${CSS.escape(pid)}"]`);
+        if (applyBtn) {
+          applyBtn.classList.toggle('changed', selectEl.value !== 'completed');
+        }
+        if (selectEl.value !== 'completed') {
+          openStatusModal(pid, selectEl.value);
+        }
+      });
+
+      listEl.addEventListener('click', (e) => {
+        const applyBtn = e.target.closest('[data-apply-status]');
+        if (!applyBtn) return;
+        const pid = applyBtn.getAttribute('data-apply-status');
+        const selectEl = listEl.querySelector(`[data-status-select="${CSS.escape(pid)}"]`);
+        const chosenStatus = selectEl ? selectEl.value : 'in_progress';
+        openStatusModal(pid, chosenStatus === 'completed' ? 'in_progress' : chosenStatus);
+      });
+
+      document.getElementById('modalCloseBtn')?.addEventListener('click', closeStatusModal);
+      document.getElementById('modalCancelBtn')?.addEventListener('click', closeStatusModal);
+      document.getElementById('modalConfirmBtn')?.addEventListener('click', applyStatusChange);
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) closeStatusModal();
+      });
+
+      searchInput?.addEventListener('input', render);
+      completionFilter?.addEventListener('change', render);
+
+      document.getElementById('backButton')?.addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+
+      (async function init() {
+        state = await loadProjectState();
+        render();
+      })();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+  <title>Gantt Chart Creator</title>
+  <!-- noUiSlider for date range slider -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bar-bg: #1f2937;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 200;
+      height: 62px;
+      background: rgba(11, 19, 37, 0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(31,41,55,0.7);
+    }
+    .topbar__inner {
+      max-width: 1320px; margin: 0 auto; padding: 0 24px;
+      height: 100%; display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar__brand { display: flex; align-items: center; gap: 12px; }
+    .topbar__brand-text { display: flex; flex-direction: column; line-height: 1.3; }
+    .topbar__site-name { font-weight: 700; font-size: 1rem; color: var(--text); }
+    .topbar__site-sub  { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .logo {
+      width: 46px; height: 46px; object-fit: contain;
+      flex-shrink: 0; display: block;
+    }
+    .topbar__actions { display: flex; align-items: center; gap: 10px; }
+
+    /* ── Buttons ── */
+    .btn {
+      background: var(--accent); color: #062a3a; border: none;
+      padding: 9px 18px; border-radius: 10px; font-weight: 600;
+      font-size: 0.9rem; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(56,189,248,0.28);
+      transition: opacity 0.15s, transform 0.1s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { opacity: 0.92; }
+    .btn:active { transform: translateY(1px); }
+    .btn.secondary {
+      background: #0b1325; color: var(--text);
+      border: 1px solid #1f2937; box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    }
+    .btn.danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+    .btn.success { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-sm { padding: 6px 12px; font-size: 0.82rem; border-radius: 8px; }
+
+    /* ── Layout ── */
+    .container { max-width: 1320px; width: 100%; margin: 0 auto; padding: 24px; flex: 1; }
+
+    /* ── Panel ── */
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+      border: 1px solid #1f2937; border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 24px; margin-bottom: 24px;
+    }
+    .panel h2 { font-size: 1.2rem; margin-bottom: 4px; }
+    .panel p.sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 16px; }
+
+    /* ── Steps indicator ── */
+    .steps { display: flex; gap: 0; margin-bottom: 28px; overflow-x: auto; }
+    .step {
+      flex: 1; min-width: 120px; text-align: center;
+      padding: 12px 8px; position: relative;
+      font-size: 0.82rem; font-weight: 600; color: var(--muted);
+      border-bottom: 3px solid #1f2937; transition: all 0.25s;
+    }
+    .step.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .step.done   { color: var(--success); border-bottom-color: var(--success); }
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: #1f2937; font-size: 0.75rem; margin-bottom: 4px;
+    }
+    .step.active .step-num { background: var(--accent); color: #062a3a; }
+    .step.done .step-num   { background: var(--success); color: #052e16; }
+
+    /* ── Wizard pages ── */
+    .wizard-page { display: none; }
+    .wizard-page.active { display: block; }
+
+    /* ── Form ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+    .input, .select-input {
+      width: 100%; padding: 10px 12px;
+      background: #0b1325; color: var(--text);
+      border: 1px solid #1f2937; border-radius: 10px;
+      outline: none; font-size: 0.9rem; transition: border-color 0.15s;
+    }
+    .input:focus, .select-input:focus { border-color: rgba(56,189,248,0.45); }
+    .input[type="date"] { color-scheme: dark; }
+
+    /* ── Section accordion ── */
+    .section-group { margin-bottom: 16px; border: 1px solid #1f2937; border-radius: 12px; overflow: hidden; }
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .section-header:hover { background: rgba(56,189,248,0.06); }
+    .section-header .arrow { font-size: 0.7rem; color: var(--accent); transition: transform 0.2s; }
+    .section-header.collapsed .arrow { transform: rotate(-90deg); }
+    .section-header .sec-title { font-weight: 700; font-size: 0.95rem; }
+    .section-header .sec-count { font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+    .section-body { padding: 0 16px 16px; }
+    .section-body.collapsed { display: none; }
+
+    .sec-color-electrical    { border-left: 4px solid #fbbf24; }
+    .sec-color-architectural { border-left: 4px solid #a78bfa; }
+    .sec-color-mechanical    { border-left: 4px solid #4ade80; }
+    .sec-color-plumbing      { border-left: 4px solid #7dd3fc; }
+    .sec-color-electronics   { border-left: 4px solid #fb7185; }
+    .sec-color-general       { border-left: 4px solid #fb923c; }
+    .sec-color-others        { border-left: 4px solid #2dd4bf; }
+
+    /* ── Item row ── */
+    .item-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.8fr) 130px 130px 95px 80px 115px minmax(110px, 1fr);
+      gap: 8px; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid rgba(31,41,55,0.4);
+      font-size: 0.85rem;
+    }
+    @media (max-width: 1100px) {
+      .item-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .item-row { grid-template-columns: 1fr; }
+    }
+    .item-row:last-child { border-bottom: none; }
+    .item-title { font-weight: 600; color: var(--text); }
+    .item-row .input { padding: 7px 10px; font-size: 0.82rem; }
+    .item-row .select-input { padding: 7px 10px; font-size: 0.82rem; }
+    .item-header {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.8fr) 130px 130px 95px 80px 115px minmax(110px, 1fr);
+      gap: 8px; padding: 8px 0; font-size: 0.73rem;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+      border-bottom: 1px solid #1f2937;
+    }
+    @media (max-width: 1100px) { .item-header { display: none; } }
+
+    /* ── Gantt Preview ── */
+    .gantt-preview-wrap { overflow-x: auto; margin-top: 16px; }
+    .gantt-table { min-width: 900px; width: 100%; }
+    .gantt-timeline-header {
+      display: grid; grid-template-columns: 240px 1fr;
+      border-bottom: 1px solid #1f2937; padding-bottom: 8px; margin-bottom: 8px;
+    }
+    .gantt-timeline-header .label-col {
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em; padding: 0 12px;
+    }
+    .gantt-months { display: flex; }
+    .gantt-month {
+      font-size: 0.72rem; color: var(--muted); text-align: center;
+      border-left: 1px solid rgba(31,41,55,0.5); padding: 0 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .gantt-section-header-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 8px;
+      margin: 8px 0 2px; cursor: pointer; user-select: none;
+    }
+    .gantt-section-header-row:hover { opacity: 0.9; }
+    .gantt-section-header-row .arrow { font-size: 0.7rem; transition: transform 0.2s; }
+    .gantt-section-header-row.collapsed .arrow { transform: rotate(-90deg); }
+    .gantt-section-header-row .sec-label { font-weight: 700; font-size: 0.9rem; }
+    .gantt-section-header-row .sec-cnt { font-size: 0.78rem; opacity: 0.7; }
+
+    .bg-electrical    { background: rgba(251,191,36,0.1); color: #fbbf24; }
+    .bg-architectural { background: rgba(167,139,250,0.1); color: #a78bfa; }
+    .bg-mechanical    { background: rgba(74,222,128,0.1); color: #4ade80; }
+    .bg-plumbing      { background: rgba(125,211,252,0.1); color: #7dd3fc; }
+    .bg-electronics   { background: rgba(251,113,133,0.1); color: #fb7185; }
+    .bg-general       { background: rgba(251,146,60,0.1);  color: #fb923c; }
+    .bg-others        { background: rgba(45,212,191,0.1);  color: #2dd4bf; }
+
+    .gantt-row {
+      display: grid; grid-template-columns: 240px 1fr;
+      align-items: center; min-height: 34px;
+      border-bottom: 1px solid rgba(31,41,55,0.3);
+    }
+    .gantt-row:hover { background: rgba(255,255,255,0.02); }
+    .gantt-row-label {
+      font-size: 0.8rem; padding: 5px 12px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .gantt-row-bar-area { position: relative; height: 22px; }
+    .gantt-bar {
+      position: absolute; height: 18px; top: 2px; border-radius: 5px;
+      min-width: 8px; transition: opacity 0.15s, box-shadow 0.15s;
+      cursor: grab; user-select: none; overflow: visible;
+    }
+    .gantt-bar:active { cursor: grabbing; box-shadow: 0 0 0 2px #fff; z-index: 30; }
+    .gantt-bar:hover { opacity: 0.92; box-shadow: 0 0 0 1px rgba(255,255,255,0.5); }
+    .gantt-bar-progress {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.28);
+      border-right: 2px solid rgba(255, 255, 255, 0.85);
+      border-radius: 5px 0 0 5px; pointer-events: none;
+    }
+    .gantt-bar-tooltip {
+      display: none; position: absolute; bottom: calc(100% + 6px);
+      left: 50%; transform: translateX(-50%);
+      padding: 6px 10px; background: #1e293b; border: 1px solid #334155;
+      border-radius: 8px; font-size: 0.72rem; color: var(--text);
+      white-space: nowrap; z-index: 100; pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .gantt-bar:hover .gantt-bar-tooltip,
+    .gantt-bar.dragging .gantt-bar-tooltip { display: block; }
+    .gantt-bar { touch-action: none; }
+    .gantt-bar.dragging { cursor: grabbing; box-shadow: 0 0 0 2px #fff; z-index: 30; opacity: 0.92; }
+    .gantt-bar-handle {
+      position: absolute; top: 0; bottom: 0; width: 8px; z-index: 2;
+      cursor: ew-resize; opacity: 0; transition: opacity 0.15s;
+      background: rgba(255, 255, 255, 0.55);
+    }
+    .gantt-bar-handle::after {
+      content: ''; position: absolute; top: 4px; bottom: 4px; left: 3px;
+      width: 2px; border-radius: 1px; background: rgba(15, 23, 42, 0.7);
+    }
+    .gantt-bar-handle.left  { left: 0;  border-radius: 5px 0 0 5px; }
+    .gantt-bar-handle.right { right: 0; border-radius: 0 5px 5px 0; }
+    .gantt-bar:hover .gantt-bar-handle,
+    .gantt-bar.dragging .gantt-bar-handle { opacity: 1; }
+    body.gantt-resizing, body.gantt-resizing * { cursor: ew-resize !important; }
+
+    .bar-electrical    { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .bar-architectural { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .bar-mechanical    { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .bar-plumbing      { background: linear-gradient(90deg, #38bdf8, #7dd3fc); }
+    .bar-electronics   { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+    .bar-general       { background: linear-gradient(90deg, #f97316, #fb923c); }
+    .bar-others        { background: linear-gradient(90deg, #0d9488, #2dd4bf); }
+
+    /* ── Today line ── */
+    .today-line {
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      background: var(--danger); z-index: 5; pointer-events: none;
+    }
+    .today-label {
+      position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+      font-size: 0.62rem; color: var(--danger); font-weight: 700; white-space: nowrap;
+    }
+    .gantt-body-wrap {
+      position: relative;
+    }
+    .gantt-today-overlay {
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      background: var(--danger); z-index: 10; pointer-events: none;
+    }
+    .gantt-today-overlay .today-label {
+      position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+      font-size: 0.65rem; color: var(--danger); font-weight: 700; white-space: nowrap;
+      background: rgba(15,23,42,0.85); padding: 1px 6px; border-radius: 4px;
+    }
+
+    /* ── Gantt date-range footer ── */
+    .gantt-date-range {
+      display: grid; grid-template-columns: 240px 1fr;
+      border-top: 1px solid #1f2937; padding: 6px 0 2px;
+    }
+    .gantt-date-range .dr-label {
+      font-size: 0.72rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 0 12px; display: flex; align-items: center;
+    }
+    .gantt-date-range-bar {
+      position: relative; height: 20px;
+    }
+    .gantt-date-range-start,
+    .gantt-date-range-end {
+      position: absolute; font-size: 0.75rem; font-weight: 700;
+      color: var(--accent); white-space: nowrap; top: 0;
+    }
+    .gantt-date-range-start { left: 0; }
+    .gantt-date-range-end   { right: 0; text-align: right; }
+
+    /* ── Legend ── */
+    .gantt-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #1f2937; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+    .legend-swatch { width: 20px; height: 10px; border-radius: 3px; }
+
+    /* ── Work Distribution ── */
+    .dist-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      font-size: 0.85rem; margin-top: 16px;
+    }
+    .dist-table th {
+      text-align: left; padding: 10px 12px;
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); border-bottom: 2px solid #1f2937;
+    }
+    .dist-table td {
+      padding: 10px 12px; border-bottom: 1px solid rgba(31,41,55,0.4);
+    }
+    .dist-table tbody tr:hover { background: rgba(56,189,248,0.04); }
+    .workload-bar {
+      height: 8px; border-radius: 4px; background: var(--bar-bg); overflow: hidden;
+    }
+    .workload-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, #60a5fa, #22d3ee);
+      transition: width 0.4s ease;
+    }
+
+    /* ── Saved schedules list ── */
+    .schedule-card {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 14px 16px;
+      border: 1px solid #1f2937; border-radius: 12px;
+      background: rgba(15,23,42,0.5); margin-bottom: 10px;
+      transition: border-color 0.15s;
+    }
+    .schedule-card:hover { border-color: rgba(56,189,248,0.25); }
+    .schedule-card .sc-info { display: flex; flex-direction: column; gap: 4px; }
+    .schedule-card .sc-name { font-weight: 700; font-size: 0.95rem; }
+    .schedule-card .sc-meta { font-size: 0.78rem; color: var(--muted); }
+    .schedule-card .sc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .status-badge {
+      padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+    }
+    .status-badge.draft    { background: rgba(245,158,11,0.12); color: var(--warning); }
+    .status-badge.active   { background: rgba(34,197,94,0.12);  color: var(--success); }
+    .status-badge.archived { background: rgba(148,163,184,0.12); color: var(--muted); }
+
+    /* ── Wizard navigation ── */
+    .wizard-nav {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+      gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #1f2937;
+    }
+    .wizard-nav__left { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ── Loading / Toast ── */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999; font-size: 1rem; color: var(--text);
+    }
+    .loading-overlay[hidden] { display: none; }
+    .spinner {
+      width: 24px; height: 24px; border: 3px solid var(--muted);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.7s linear infinite; margin-right: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; padding: 14px 20px;
+      border-radius: 12px; font-size: 0.88rem; font-weight: 600;
+      z-index: 800; opacity: 0; transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s; pointer-events: none;
+    }
+    .toast.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .toast.success { background: rgba(34,197,94,0.2); color: #bbf7d0; border: 1px solid rgba(34,197,94,0.3); }
+    .toast.error   { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+
+    /* ── Quick date presets ── */
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .presets .btn-sm { font-size: 0.78rem; }
+
+    /* ── Date Range Slider ── */
+    .date-slider-wrap {
+      margin: 18px 0 20px; padding: 20px 18px 14px;
+      background: #0b1325; border: 1px solid #1f2937; border-radius: 12px;
+    }
+    .date-slider-wrap .slider-labels {
+      display: flex; justify-content: space-between; margin-bottom: 12px;
+    }
+    .date-slider-wrap .slider-label {
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+    }
+    .date-slider-wrap .slider-label strong {
+      color: var(--accent); font-size: 0.88rem; display: block; margin-top: 2px;
+    }
+    .date-slider-wrap .slider-duration {
+      text-align: center; margin-top: 10px;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .date-slider-wrap .slider-duration strong { color: var(--accent); }
+    #dateRangeSlider { margin: 0 8px; }
+    #dateRangeSlider .noUi-connect { background: linear-gradient(90deg, var(--accent), #06b6d4); }
+    #dateRangeSlider .noUi-target { background: #1f2937; border: none; border-radius: 6px; height: 8px; box-shadow: none; }
+    #dateRangeSlider .noUi-handle {
+      width: 22px; height: 22px; border-radius: 50%; top: -8px; right: -11px;
+      background: var(--accent); border: 3px solid #0b1325;
+      box-shadow: 0 2px 8px rgba(56,189,248,0.35); cursor: grab;
+    }
+    #dateRangeSlider .noUi-handle::before, #dateRangeSlider .noUi-handle::after { display: none; }
+    #dateRangeSlider .noUi-tooltip {
+      background: #1e293b; color: var(--text); border: 1px solid #334155;
+      border-radius: 8px; font-size: 0.72rem; padding: 4px 8px; font-weight: 600;
+    }
+
+    /* ── Total Days Consumed Row ── */
+    .total-days-row td {
+      padding: 12px 12px; border-top: 2px solid rgba(56,189,248,0.2);
+      background: rgba(56,189,248,0.04);
+    }
+    .total-days-value {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 1.1rem; font-weight: 800; color: var(--accent);
+    }
+    .total-days-badge {
+      padding: 4px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 700;
+      background: rgba(56,189,248,0.12); color: var(--accent); border: 1px solid rgba(56,189,248,0.2);
+    }
+    .info-tooltip {
+      position: relative; display: inline-flex; align-items: center; cursor: help;
+    }
+    .info-tooltip .tip-icon {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(56,189,248,0.15); color: var(--accent);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 800;
+    }
+    .info-tooltip .tip-text {
+      display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+      background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+      padding: 8px 12px; font-size: 0.75rem; color: var(--text);
+      white-space: nowrap; z-index: 50; pointer-events: none; font-weight: 400;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .info-tooltip:hover .tip-text { display: block; }
+
+    /* ── Report Actions Bar ── */
+    .report-actions {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      margin-top: 20px; padding-top: 18px; border-top: 1px solid #1f2937;
+    }
+    .report-actions .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .report-toggle {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--muted); cursor: pointer; user-select: none;
+    }
+    .report-toggle input[type="checkbox"] {
+      accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer;
+    }
+
+    /* ── Print Report Header ── */
+    .print-report-header {
+      display: none; padding: 0 0 14px; margin-bottom: 16px;
+      border-bottom: 2px solid #0f172a;
+    }
+    .print-report-header h1 { font-size: 1.45rem; font-weight: 800; margin: 0 0 6px; color: #0f172a; letter-spacing: -0.01em; }
+    .print-report-header .report-meta {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 20px;
+      font-size: 0.82rem; color: #334155; margin-top: 8px;
+      background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px;
+    }
+    .print-report-header .report-meta strong { color: #0f172a; }
+
+    /* ── Print-only Gantt table (Step 4 report) ──
+       A real <table> so the month header repeats on every printed page
+       and rows can never be split across a page break. */
+    .gantt-print-table {
+      width: 100%; border-collapse: collapse; table-layout: fixed;
+      font-size: 0.74rem; color: #0f172a;
+    }
+    .gantt-print-table col.gpt-label-col { width: 230px; }
+    .gantt-print-table thead { display: table-header-group; }
+    .gantt-print-table thead th {
+      background: #f8fafc; border-bottom: 2px solid #cbd5e1;
+      padding: 6px 8px; text-align: left; font-weight: 700; color: #334155;
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .gantt-print-table thead th.gpt-months-cell { padding: 0; position: relative; }
+    .gpt-months { display: flex; height: 100%; }
+    .gpt-month {
+      padding: 6px 4px; border-left: 1px solid #cbd5e1; text-align: center;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-transform: none; letter-spacing: 0;
+    }
+    .gpt-today-tag {
+      position: absolute; bottom: -1px; transform: translateX(-50%);
+      font-size: 0.58rem; font-weight: 700; color: #ef4444;
+      text-transform: uppercase; background: #fff; padding: 0 3px; line-height: 1.2;
+    }
+    .gantt-print-table td { border-bottom: 1px solid #e2e8f0; padding: 0; vertical-align: middle; }
+    .gantt-print-table tr.gpt-section td { padding: 6px 0 2px; border-bottom: none; }
+    .gpt-section-label {
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 5px 10px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;
+    }
+    .gpt-section-label .gpt-cnt { font-weight: 500; font-size: 0.7rem; opacity: 0.8; }
+    .gpt-label { padding: 4px 8px; overflow: hidden; }
+    .gpt-title { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gpt-dates { display: block; font-size: 0.64rem; color: #475569; white-space: nowrap; }
+    .gpt-track { position: relative; height: 30px; }
+    .gpt-grid { position: absolute; top: 0; bottom: 0; border-left: 1px solid #e2e8f0; }
+    .gpt-today { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid #ef4444; z-index: 2; }
+    .gpt-bar {
+      position: absolute; top: 8px; height: 14px; border-radius: 4px; min-width: 4px;
+      overflow: hidden; z-index: 1; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+    }
+    .gpt-bar-progress { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.25); }
+    .gantt-print-table tr.gpt-range td { border-bottom: none; border-top: 1px solid #cbd5e1; }
+    .gpt-range-label { padding: 5px 8px; font-size: 0.66rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+    .gpt-range-dates { display: flex; justify-content: space-between; padding: 5px 0; font-weight: 700; color: #0369a1; }
+
+    /* ── Print ── */
+    @media print {
+      /* Real page margins so every page (not only the first) gets white space.
+         Defining a margin box also replaces the browser's URL/date header & footer. */
+      @page {
+        size: A4 landscape;
+        margin: 12mm 12mm 14mm;
+        @bottom-right {
+          content: "Page " counter(page) " of " counter(pages);
+          font-size: 8pt; color: #64748b;
+        }
+      }
+      body {
+        background: #fff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        font-size: 11pt;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #agyRbacTopbar, #agyChangePwdModal, #agyToastContainer, .no-print,
+      header, .page-header, .topbar, .wizard-nav, .steps, .presets, .toast, .loading-overlay,
+      .date-slider-wrap, .report-actions, .report-toggle, #savedSchedulesWrap,
+      #stepsBar, .btn, .panel > p.sub, #page2 .panel > h2 {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+      }
+      .container { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+      /* Show the print-only or currently active page */
+      .wizard-page { display: none !important; }
+      .wizard-page.active, .wizard-page.print-visible { display: block !important; }
+      .panel {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        padding: 14px 16px !important;
+        margin-bottom: 14px !important;
+        /* Long panels may continue on the next page; each piece keeps its own border & padding */
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+      /* Short summary panels stay in one piece */
+      #distributionPanel, #criticalPathPanel { break-inside: avoid; page-break-inside: avoid; }
+      /* The Gantt chart starts on a fresh page instead of being squeezed under the summary */
+      #ganttPrintPanel { break-before: page; page-break-before: always; }
+      /* Never leave a heading alone at the bottom of a page */
+      .panel h2, .print-report-header { break-after: avoid; page-break-after: avoid; }
+      /* Rows, cards and list items are never sliced in half */
+      tr, .gantt-row, .gantt-section-header-row, .gantt-timeline-header, .gantt-legend,
+      #criticalPathContent > div > div, #criticalPathPanel li {
+        break-inside: avoid; page-break-inside: avoid;
+      }
+      .gantt-section-header-row, .gantt-print-table tr.gpt-section { break-after: avoid; page-break-after: avoid; }
+      /* Keep short sections together (move to next page rather than split); long ones still flow */
+      .gantt-print-table tbody { break-inside: avoid; page-break-inside: avoid; }
+      .gantt-print-table thead { display: table-header-group; }
+      .info-tooltip { display: none !important; }
+      /* Long "Parallel Work Streams" list flows into columns so the panel fits on one page */
+      #criticalPathPanel ul:not(:last-child) { columns: 3; column-gap: 28px; }
+      .total-days-row span[style*="var(--muted)"] { color: #475569 !important; }
+      .dist-table td span[style*="93c5fd"] { color: #0369a1 !important; }
+      .gpt-today-tag, .gpt-today, .gpt-bar, .gpt-bar-progress, .gpt-section-label, .gantt-print-table thead th {
+        -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+      }
+      .panel h2 {
+        color: #0f172a !important;
+        font-size: 1.05rem !important;
+        margin: 0 0 10px !important;
+        padding-bottom: 6px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+      }
+      /* Report header */
+      .print-report-header {
+        display: block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      /* Gantt bars */
+      .gantt-preview-wrap { overflow: visible !important; }
+      .gantt-table { min-width: 0 !important; width: 100% !important; }
+      .gantt-section-header-row {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        border-radius: 6px !important;
+        margin-top: 6px !important;
+      }
+      .bg-electrical    { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a !important; }
+      .bg-architectural { background: #ede9fe !important; color: #5b21b6 !important; border: 1px solid #ddd6fe !important; }
+      .bg-mechanical    { background: #dcfce7 !important; color: #166534 !important; border: 1px solid #bbf7d0 !important; }
+      .bg-plumbing      { background: #e0f2fe !important; color: #075985 !important; border: 1px solid #bae6fd !important; }
+      .bg-electronics   { background: #ffe4e6 !important; color: #9f1239 !important; border: 1px solid #fecdd3 !important; }
+      .bg-general       { background: #ffedd5 !important; color: #9a3412 !important; border: 1px solid #fed7aa !important; }
+      .bg-others        { background: #ccfbf1 !important; color: #115e59 !important; border: 1px solid #99f6e4 !important; }
+      .gantt-row {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        min-height: 28px !important;
+      }
+      .gantt-row-label { color: #0f172a !important; font-weight: 500 !important; font-size: 0.78rem !important; }
+      .gantt-row-bar-area { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .gantt-bar { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12) !important; }
+      .bar-electrical    { background: #f59e0b !important; }
+      .bar-architectural { background: #8b5cf6 !important; }
+      .bar-mechanical    { background: #22c55e !important; }
+      .bar-plumbing      { background: #0284c7 !important; }
+      .bar-electronics   { background: #f43f5e !important; }
+      .bar-general       { background: #ea580c !important; }
+      .bar-others        { background: #0d9488 !important; }
+      .gantt-bar-tooltip, .gantt-bar-handle { display: none !important; }
+      .gantt-today-overlay { background: #ef4444 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .gantt-today-overlay .today-label { background: transparent !important; color: #ef4444 !important; }
+      .gantt-timeline-header { border-bottom: 2px solid #cbd5e1 !important; background: #f8fafc !important; }
+      .gantt-timeline-header .label-col { color: #334155 !important; font-weight: 700 !important; }
+      .gantt-month { border-left: 1px solid #cbd5e1 !important; color: #334155 !important; font-weight: 600 !important; }
+      .gantt-legend { border-top: 1px solid #cbd5e1 !important; padding-top: 10px !important; margin-top: 10px !important; }
+      .gantt-legend .legend-swatch { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .legend-item { color: #1e293b !important; font-weight: 600 !important; }
+      /* Date range footer in print */
+      .gantt-date-range { border-top: 1px solid #cbd5e1 !important; }
+      .gantt-date-range .dr-label { color: #475569 !important; }
+      .gantt-date-range-start, .gantt-date-range-end { color: #0369a1 !important; font-weight: 700 !important; }
+      /* Distribution table */
+      .dist-table { width: 100% !important; border-collapse: collapse !important; }
+      .dist-table th { color: #334155 !important; background: #f8fafc !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 700 !important; }
+      .dist-table td { color: #0f172a !important; border-bottom: 1px solid #e2e8f0 !important; }
+      .workload-bar, .workload-fill { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .workload-bar { background: #e2e8f0 !important; }
+      .total-days-row td { background: #f0f9ff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .total-days-value { color: #0369a1 !important; }
+      .total-days-badge { background: #e0f2fe !important; color: #0369a1 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      /* Critical path / recommendations text */
+      #criticalPathPanel div[style] span[style*="color:var(--muted)"] { color: #334155 !important; font-weight: 600 !important; }
+      #criticalPathPanel ul li { color: #0f172a !important; font-weight: 500 !important; }
+      #criticalPathPanel div[style*="border"] { border-color: #cbd5e1 !important; background: #f8fafc !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      #criticalPathPanel div[style*="border"] strong { color: #0f172a !important; }
+      /* Page footer */
+      .print-page-footer { display: block !important; text-align: center; font-size: 0.72rem; color: #64748b; margin-top: 14px; padding-top: 8px; border-top: 1px solid #cbd5e1; break-before: avoid; page-break-before: avoid; break-inside: avoid; }
+      /* Hide gantt panel if user unchecked the toggle */
+      .panel.gantt-hidden-for-print { display: none !important; }
+    }
+    .print-page-footer { display: none; }
+  </style>
+</head>
+
+<body>
+  <!-- ── Topbar ── -->
+  <nav class="topbar">
+    <div class="topbar__inner">
+      <div class="topbar__brand">
+        <img class="logo" src="images/project_tracker_25p.png" alt="Project Tracker logo" width="46" height="46" />
+        <div class="topbar__brand-text">
+          <span class="topbar__site-name">Gantt Chart Creator</span>
+          <span class="topbar__site-sub">Proposed Timeline &amp; Work Distribution</span>
+        </div>
+      </div>
+      <div class="topbar__actions">
+        <button class="btn secondary btn-sm" id="btnBack" type="button">Back to Dashboard</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Loading overlay ── -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div> Loading project data&hellip;
+  </div>
+
+  <!-- ── Toast ── -->
+  <div class="toast" id="toast"></div>
+
+  <div class="container">
+    <!-- ── Steps indicator ── -->
+    <div class="steps" id="stepsBar">
+      <div class="step active" data-step="0"><div class="step-num">1</div><div>Select Project</div></div>
+      <div class="step" data-step="1"><div class="step-num">2</div><div>Set Timeline</div></div>
+      <div class="step" data-step="2"><div class="step-num">3</div><div>Preview Chart</div></div>
+      <div class="step" data-step="3"><div class="step-num">4</div><div>Work Distribution</div></div>
+    </div>
+
+    <!-- ════════════ STEP 0: Project Selection ════════════ -->
+    <div class="wizard-page active" id="page0">
+      <div class="panel">
+        <h2>Select Active Project</h2>
+        <p class="sub">Choose which project to create a proposed Gantt chart for. All enabled sections and tracked sub-items will be included.</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="projectSelect">Project</label>
+            <select class="select-input" id="projectSelect"></select>
+          </div>
+          <div class="form-group">
+            <label for="scheduleName">Schedule Name</label>
+            <input class="input" id="scheduleName" type="text" value="Proposed Schedule" placeholder="e.g. Phase 1 Timeline" />
+          </div>
+        </div>
+
+        <div id="projectSummary" hidden></div>
+
+        <!-- ── Previously saved schedules ── -->
+        <div id="savedSchedulesWrap" hidden>
+          <h3 style="font-size: 1rem; margin: 20px 0 10px;">Saved Schedules</h3>
+          <div id="savedSchedulesList"></div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn secondary" id="btnGanttHome0" data-gantt-home type="button"><i class="fa-solid fa-house"></i> Gantt Home</button>
+        <button class="btn" id="btnNext0" type="button">Next: Set Timeline &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ════════════ STEP 1: Timeline Editor ════════════ -->
+    <div class="wizard-page" id="page1">
+      <div class="panel">
+        <h2>Proposed Timeline</h2>
+        <p class="sub">Set start and end dates for each tracked sub-item. Use the quick-fill presets or edit individually.</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="globalStart">Project Start Date</label>
+            <input class="input" id="globalStart" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="globalEnd">Project Target End Date</label>
+            <input class="input" id="globalEnd" type="date" />
+          </div>
+        </div>
+
+        <!-- Date Range Slider -->
+        <div class="date-slider-wrap" id="dateSliderWrap">
+          <div class="slider-labels">
+            <div class="slider-label">Start<strong id="sliderStartLabel">—</strong></div>
+            <div class="slider-label" style="text-align:right;">End<strong id="sliderEndLabel">—</strong></div>
+          </div>
+          <div id="dateRangeSlider"></div>
+          <div class="slider-duration">Project Duration: <strong id="sliderDuration">—</strong> calendar days</div>
+        </div>
+
+        <div class="presets">
+          <button class="btn secondary btn-sm" data-preset="sequential" type="button">Auto-fill Sequential</button>
+          <button class="btn secondary btn-sm" data-preset="parallel" type="button">Auto-fill Parallel</button>
+          <button class="btn secondary btn-sm" data-preset="spread" type="button">Even Spread</button>
+          <button class="btn secondary btn-sm" data-preset="reset" type="button">Reset Dates</button>
+        </div>
+
+        <div id="timelineEditor"></div>
+      </div>
+      <div class="wizard-nav">
+        <div class="wizard-nav__left">
+          <button class="btn secondary" id="btnPrev1" type="button">&larr; Back</button>
+          <button class="btn secondary" id="btnGanttHome1" data-gantt-home type="button"><i class="fa-solid fa-house"></i> Gantt Home</button>
+        </div>
+        <button class="btn" id="btnNext1" type="button">Next: Preview Chart &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ════════════ STEP 2: Gantt Preview ════════════ -->
+    <div class="wizard-page" id="page2">
+      <!-- Print-only chart header -->
+      <div class="print-report-header" id="printChartHeader">
+        <h1 id="chartReportTitle">Project Gantt Schedule</h1>
+        <div class="report-meta">
+          <div>Project: <strong id="chartReportProject">—</strong></div>
+          <div>Schedule: <strong id="chartReportScheduleName">—</strong></div>
+          <div>Date Range: <strong id="chartReportDateRange">—</strong></div>
+          <div>Total Duration: <strong id="chartReportDuration">—</strong> days</div>
+          <div>Disciplines: <strong id="chartReportDisciplines">—</strong></div>
+          <div>Generated: <strong id="chartReportGenerated">—</strong></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Gantt Chart Preview</h2>
+        <p class="sub">Review the proposed timeline across all disciplines. <strong>Drag any task bar horizontally</strong> to reschedule its start &amp; end dates, <strong>drag a bar's left or right edge</strong> to lengthen or shorten its time span, or hover for task progress and dependency details.</p>
+        <div class="gantt-preview-wrap">
+          <div class="gantt-table" id="ganttPreview"></div>
+        </div>
+        <div class="gantt-legend" id="ganttLegend"></div>
+      </div>
+      <div class="wizard-nav">
+        <div class="wizard-nav__left">
+          <button class="btn secondary" id="btnPrev2" type="button">&larr; Back</button>
+          <button class="btn secondary" id="btnGanttHome2" data-gantt-home type="button"><i class="fa-solid fa-house"></i> Gantt Home</button>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn secondary" id="btnExportPng" type="button">🖼️ Export PNG Image</button>
+          <button class="btn secondary" id="btnPrint" type="button">🖨️ Print Chart</button>
+          <button class="btn" id="btnNext2" type="button">Next: Work Distribution &rarr;</button>
+        </div>
+      </div>
+      <div class="print-page-footer">Generated by Project Tracker &mdash; Gantt Chart Creator</div>
+    </div>
+
+    <!-- ════════════ STEP 3: Work Distribution ════════════ -->
+    <div class="wizard-page" id="page3">
+      <!-- Print-only report header -->
+      <div class="print-report-header" id="printReportHeader">
+        <h1 id="reportTitle">Project Gantt Schedule Report</h1>
+        <div class="report-meta">
+          <div>Project: <strong id="reportProject">—</strong></div>
+          <div>Schedule: <strong id="reportScheduleName">—</strong></div>
+          <div>Date Range: <strong id="reportDateRange">—</strong></div>
+          <div>Total Duration: <strong id="reportDuration">—</strong> days</div>
+          <div>Disciplines: <strong id="reportDisciplines">—</strong></div>
+          <div>Generated: <strong id="reportGenerated">—</strong></div>
+        </div>
+      </div>
+
+      <div class="panel" id="distributionPanel">
+        <h2>Work Distribution</h2>
+        <p class="sub">Review the proposed workload breakdown per discipline. Adjust team assignments as needed before saving.</p>
+        <div id="distributionContent"></div>
+      </div>
+      <div class="panel" id="criticalPathPanel">
+        <h2>Critical Path &amp; Recommendations</h2>
+        <p class="sub">Key insights derived from the proposed schedule.</p>
+        <div id="criticalPathContent"></div>
+      </div>
+
+      <!-- Gantt chart panel (shown in print if toggle is checked) -->
+      <div class="panel" id="ganttPrintPanel" style="display:none;">
+        <h2>Gantt Chart</h2>
+        <div class="gantt-preview-wrap">
+          <div class="gantt-table" id="ganttPrintPreview"></div>
+        </div>
+        <div class="gantt-legend" id="ganttPrintLegend"></div>
+      </div>
+
+      <!-- Report actions bar -->
+      <div class="report-actions">
+        <label class="report-toggle">
+          <input type="checkbox" id="toggleGanttInPrint" checked />
+          Include Gantt Chart in Report
+        </label>
+        <div style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn" id="btnPrintReport" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print Report
+          </button>
+          <button class="btn secondary" id="btnExportPdf" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Export PDF
+          </button>
+          <button class="btn secondary" id="btnExportPngReport" type="button">
+            🖼️ Export PNG
+          </button>
+          <button class="btn secondary" id="btnExportExcel" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><path d="M8 13l3 3 3-3"/><path d="M8 17l3-3 3 3"/></svg>
+            Download Excel
+          </button>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <div class="wizard-nav__left">
+          <button class="btn secondary" id="btnPrev3" type="button">&larr; Back</button>
+          <button class="btn secondary" id="btnGanttHome3" data-gantt-home type="button"><i class="fa-solid fa-house"></i> Gantt Home</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn success" id="btnSave" type="button">Save Schedule</button>
+          <button class="btn secondary" id="btnExport" type="button">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="print-page-footer">Generated by Project Tracker &mdash; Gantt Chart Creator</div>
+    </div>
+  </div>
+
+  <script src="state.js"></script>
+  <!-- Auth Guard -->
+  <script>
+    if (!window.ProjectData || !window.ProjectData.isAuthenticated()) {
+      window.location.href = 'login.html';
+    }
+  </script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Imports from state.js ── */
+    const {
+      SECTION_ORDER, SECTION_DEFS, loadProjectState, persistProjectState,
+      fmtDate, getSectionPercent, getActiveProject, setActiveProject,
+      listProjects, isSectionEnabled, getEnabledSections, getActiveUserName,
+      isProjectCompleted, isCustomSection, getSectionColor
+    } = window.ProjectData;
+
+    const SECTION_LABELS = {
+      electrical: 'Electrical', architectural: 'Architectural',
+      mechanical: 'Mechanical', plumbing: 'Plumbing', electronics: 'Electronics',
+      general: 'General', others: 'Others'
+    };
+    const SECTION_COLORS = {
+      electrical: 'bar-electrical', architectural: 'bar-architectural',
+      mechanical: 'bar-mechanical', plumbing: 'bar-plumbing', electronics: 'bar-electronics',
+      general: 'bar-general', others: 'bar-others'
+    };
+    const SECTION_BG = {
+      electrical: 'bg-electrical', architectural: 'bg-architectural',
+      mechanical: 'bg-mechanical', plumbing: 'bg-plumbing', electronics: 'bg-electronics',
+      general: 'bg-general', others: 'bg-others'
+    };
+    const TEAM_MAP = {
+      electrical: 'E-Team', architectural: 'A-Team',
+      mechanical: 'M-Team', plumbing: 'P-Team', electronics: 'EL-Team',
+      general: 'G-Team', others: 'O-Team'
+    };
+    /** Add user-defined custom sections to the label / colour / team lookups above. */
+    function registerCustomSectionMaps() {
+      SECTION_ORDER.forEach((key) => {
+        if (!isCustomSection(key)) return;
+        const def = SECTION_DEFS[key];
+        SECTION_LABELS[key] = def.title;
+        SECTION_COLORS[key] = `bar-${key}`;   // classes injected by state.js
+        SECTION_BG[key] = `bg-${key}`;
+        TEAM_MAP[key] = def.lead || 'Custom Team';
+      });
+    }
+    const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    /* ── State ── */
+    let projectState = null;
+    let currentProject = null;
+    let currentStep = 0;
+    let itemTimelines = []; // flat array: { sectionKey, itemKey, title, startDate, endDate, priority, progress, assignedTo, dependencies }
+    let savedSchedules = [];
+    let editingScheduleId = null;
+
+    /* ── DOM refs ── */
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    /* ── API Key + Session Token helper ── */
+    const apiFetch = async (endpoint, opts = {}) => {
+      const apiKey = window.ProjectData.getApiKey && window.ProjectData.getApiKey();
+      const token = window.ProjectData.getSessionToken && window.ProjectData.getSessionToken();
+      const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+      if (apiKey) headers['X-API-Key'] = apiKey;
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch('api/' + endpoint, { ...opts, headers });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const text = await res.text();
+        throw new Error('Non-JSON response: ' + text.substring(0, 200));
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'API error ' + res.status);
+      return data;
+    };
+
+    /* ── Toast ── */
+    let toastTimer = null;
+    const showToast = (msg, type = 'success') => {
+      const el = $('#toast');
+      el.textContent = msg;
+      el.className = 'toast ' + type + ' visible';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('visible'), 3500);
+    };
+
+    /* ── Escaping ── */
+    const esc = (str) => {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(str || ''));
+      return d.innerHTML;
+    };
+
+    /* ── Date helpers ── */
+    const toDateStr = (d) => d.toISOString().split('T')[0];
+    const addDays = (dateStr, n) => {
+      const d = new Date(dateStr); d.setDate(d.getDate() + n); return toDateStr(d);
+    };
+    const daysBetween = (a, b) => Math.max(1, Math.round((new Date(b) - new Date(a)) / 86400000) + 1);
+
+    /** Compute the actual date range from itemTimelines (earliest start, latest end). */
+    function getScheduleDateRange() {
+      if (!itemTimelines.length) return { start: null, end: null, calendarDays: 0 };
+      let minTs = Infinity, maxTs = -Infinity;
+      itemTimelines.forEach(it => {
+        const s = new Date(it.startDate).getTime();
+        const e = new Date(it.endDate).getTime();
+        if (s < minTs) minTs = s;
+        if (e > maxTs) maxTs = e;
+      });
+      const startStr = toDateStr(new Date(minTs));
+      const endStr = toDateStr(new Date(maxTs));
+      const calendarDays = Math.ceil((maxTs - minTs) / 86400000);
+      return { start: startStr, end: endStr, calendarDays };
+    }
+
+    /* ═══════════════════════════════════════════════
+       INITIALIZATION
+    ═══════════════════════════════════════════════ */
+    (async function init() {
+      projectState = await loadProjectState();
+      registerCustomSectionMaps();
+      populateProjectSelect();
+      await loadSavedSchedules();
+      showLoading(false);
+      wireEvents();
+      onProjectChange();
+    })();
+
+    function showLoading(show) {
+      const overlay = $('#loadingOverlay');
+      if (show) overlay.removeAttribute('hidden');
+      else overlay.setAttribute('hidden', '');
+    }
+
+    /* ═══════════════════════════════════════════════
+       STEP NAVIGATION
+    ═══════════════════════════════════════════════ */
+    function goToStep(n) {
+      currentStep = n;
+      $$('.wizard-page').forEach((p, i) => p.classList.toggle('active', i === n));
+      $$('.steps .step').forEach((s, i) => {
+        s.classList.remove('active', 'done');
+        if (i < n) s.classList.add('done');
+        if (i === n) s.classList.add('active');
+      });
+      if (n === 1) buildTimelineEditor();
+      if (n === 2) renderGanttPreview();
+      if (n === 3) { renderGanttPreview(); renderDistribution(); renderCriticalPath(); }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ═══════════════════════════════════════════════
+       STEP 0 — PROJECT SELECTION
+    ═══════════════════════════════════════════════ */
+    function populateProjectSelect() {
+      const sel = $('#projectSelect');
+      const projects = listProjects(projectState).filter(p => {
+        const proj = projectState.projects[p.id];
+        return proj && !isProjectCompleted(proj);
+      });
+      sel.innerHTML = projects.map(p =>
+        `<option value="${esc(p.id)}">${esc(p.title)}</option>`
+      ).join('');
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedPid = urlParams.get('project_id');
+      if (requestedPid && projectState.projects[requestedPid]) {
+        sel.value = requestedPid;
+        return;
+      }
+      const active = getActiveProject(projectState);
+      if (active && !isProjectCompleted(active)) sel.value = active.id;
+    }
+
+    function onProjectChange() {
+      const sel = $('#projectSelect');
+      const pid = sel.value;
+      currentProject = projectState.projects[pid];
+      if (!currentProject) return;
+
+      const enabledKeys = getEnabledSections(currentProject);
+      let totalTracked = 0;
+      enabledKeys.forEach(key => {
+        const sec = currentProject.sections[key];
+        if (sec && Array.isArray(sec.items)) {
+          totalTracked += sec.items.filter(it => it.tracked !== false).length;
+        }
+      });
+
+      const summ = $('#projectSummary');
+      summ.removeAttribute('hidden');
+      summ.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;">
+          <div style="padding:10px 14px;border-radius:10px;border:1px solid #1f2937;background:#0b1325;font-size:0.85rem;">
+            <span style="color:var(--muted);">Sections:</span> <strong>${enabledKeys.length}</strong>
+          </div>
+          <div style="padding:10px 14px;border-radius:10px;border:1px solid #1f2937;background:#0b1325;font-size:0.85rem;">
+            <span style="color:var(--muted);">Tracked Items:</span> <strong>${totalTracked}</strong>
+          </div>
+          <div style="padding:10px 14px;border-radius:10px;border:1px solid #1f2937;background:#0b1325;font-size:0.85rem;">
+            <span style="color:var(--muted);">Sections:</span> <strong>${enabledKeys.map(k => SECTION_LABELS[k] || k).join(', ')}</strong>
+          </div>
+        </div>`;
+
+      loadSavedSchedules();
+      buildItemTimelines();
+    }
+
+    function buildItemTimelines() {
+      itemTimelines = [];
+      if (!currentProject) return;
+      const enabledKeys = getEnabledSections(currentProject);
+      const today = toDateStr(new Date());
+      enabledKeys.forEach(sKey => {
+        const sec = currentProject.sections[sKey];
+        if (!sec || !Array.isArray(sec.items)) return;
+        sec.items.filter(it => it.tracked !== false).forEach(item => {
+          itemTimelines.push({
+            sectionKey: sKey,
+            itemKey: item.id,
+            title: item.title,
+            startDate: today,
+            endDate: addDays(today, 7),
+            priority: 'medium',
+            progress: Number(item.percent || 0),
+            assignedTo: TEAM_MAP[sKey] || '',
+            dependencies: ''
+          });
+        });
+      });
+    }
+
+    async function loadSavedSchedules() {
+      if (!currentProject) return;
+      try {
+        const res = await apiFetch('gantt_schedule?project_id=' + encodeURIComponent(currentProject.id));
+        savedSchedules = res.data || [];
+      } catch (_) {
+        savedSchedules = [];
+      }
+      renderSavedSchedules();
+    }
+
+    function renderSavedSchedules() {
+      const wrap = $('#savedSchedulesWrap');
+      const list = $('#savedSchedulesList');
+      if (!savedSchedules.length) { wrap.setAttribute('hidden', ''); return; }
+      wrap.removeAttribute('hidden');
+      list.innerHTML = savedSchedules.map(s => `
+        <div class="schedule-card">
+          <div class="sc-info">
+            <div class="sc-name">${esc(s.schedule_name)}</div>
+            <div class="sc-meta">Created ${esc(s.created_at)} by ${esc(s.created_by)} <span class="status-badge ${esc(s.status)}">${esc(s.status)}</span></div>
+          </div>
+          <div class="sc-actions">
+            <button class="btn btn-sm" data-preview="${s.id}" type="button">Preview</button>
+            <button class="btn secondary btn-sm" data-print="${s.id}" type="button">Print</button>
+            <button class="btn secondary btn-sm" data-load="${s.id}" type="button">Load</button>
+            <button class="btn danger btn-sm" data-del="${s.id}" type="button">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* ═══════════════════════════════════════════════
+       STEP 1 — TIMELINE EDITOR
+    ═══════════════════════════════════════════════ */
+    function buildTimelineEditor() {
+      const container = $('#timelineEditor');
+      if (!currentProject) { container.innerHTML = '<p style="color:var(--muted)">No project selected.</p>'; return; }
+
+      const gs = $('#globalStart');
+      const ge = $('#globalEnd');
+      if (!gs.value) gs.value = toDateStr(new Date());
+      if (!ge.value) ge.value = addDays(gs.value, 90);
+
+      const enabledKeys = getEnabledSections(currentProject);
+      let html = '';
+
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+
+        html += `<div class="section-group sec-color-${sKey}">`;
+        html += `<div class="section-header" data-toggle="${sKey}">
+          <span class="arrow">&#9660;</span>
+          <span class="sec-title">${esc(SECTION_LABELS[sKey] || sKey)}</span>
+          <span class="sec-count">${items.length} items</span>
+        </div>`;
+        html += `<div class="section-body" data-body="${sKey}">`;
+        html += `<div class="item-header">
+          <div>Sub-item</div><div>Start Date</div><div>End Date</div><div>Priority</div><div>Progress %</div><div>Assigned To</div><div>Dependencies</div>
+        </div>`;
+
+        items.forEach((item, idx) => {
+          const rowId = `${sKey}-${idx}`;
+          const depStr = Array.isArray(item.dependencies) ? item.dependencies.join(', ') : (item.dependencies || '');
+          html += `<div class="item-row" data-row="${rowId}">
+            <div class="item-title">${esc(item.title)}</div>
+            <input class="input" type="date" data-field="start" data-skey="${sKey}" data-idx="${idx}" value="${item.startDate}" />
+            <input class="input" type="date" data-field="end" data-skey="${sKey}" data-idx="${idx}" value="${item.endDate}" />
+            <select class="select-input" data-field="priority" data-skey="${sKey}" data-idx="${idx}">
+              <option value="low" ${item.priority==='low'?'selected':''}>Low</option>
+              <option value="medium" ${item.priority==='medium'?'selected':''}>Medium</option>
+              <option value="high" ${item.priority==='high'?'selected':''}>High</option>
+              <option value="critical" ${item.priority==='critical'?'selected':''}>Critical</option>
+            </select>
+            <input class="input" type="number" min="0" max="100" data-field="progress" data-skey="${sKey}" data-idx="${idx}" value="${Number(item.progress || 0)}" title="Task Progress (0-100%)" />
+            <input class="input" type="text" data-field="assigned" data-skey="${sKey}" data-idx="${idx}" value="${esc(item.assignedTo)}" placeholder="${TEAM_MAP[sKey] || ''}" />
+            <input class="input" type="text" data-field="dependencies" data-skey="${sKey}" data-idx="${idx}" value="${esc(depStr)}" placeholder="e.g. Panelboards" title="Comma-separated predecessor tasks" />
+          </div>`;
+        });
+
+        html += '</div></div>';
+      });
+
+      container.innerHTML = html;
+
+      // Accordion toggles
+      container.querySelectorAll('.section-header').forEach(hdr => {
+        hdr.addEventListener('click', () => {
+          const key = hdr.getAttribute('data-toggle');
+          const body = container.querySelector(`[data-body="${key}"]`);
+          hdr.classList.toggle('collapsed');
+          body.classList.toggle('collapsed');
+        });
+      });
+
+      // Input change listeners
+      container.querySelectorAll('[data-field]').forEach(el => {
+        el.addEventListener('change', () => {
+          const sKey = el.getAttribute('data-skey');
+          const idx = parseInt(el.getAttribute('data-idx'), 10);
+          const field = el.getAttribute('data-field');
+          const items = itemTimelines.filter(it => it.sectionKey === sKey);
+          if (!items[idx]) return;
+          if (field === 'start') items[idx].startDate = el.value;
+          if (field === 'end') items[idx].endDate = el.value;
+          if (field === 'priority') items[idx].priority = el.value;
+          if (field === 'progress') items[idx].progress = Math.max(0, Math.min(100, Number(el.value || 0)));
+          if (field === 'assigned') items[idx].assignedTo = el.value;
+          if (field === 'dependencies') items[idx].dependencies = el.value;
+        });
+      });
+
+      // Initialize date range slider
+      initDateSlider();
+    }
+
+    function applyPreset(type) {
+      const gs = $('#globalStart').value;
+      const ge = $('#globalEnd').value;
+      if (!gs || !ge) { showToast('Set project start and end dates first.', 'error'); return; }
+
+      const totalDays = daysBetween(gs, ge);
+      const enabledKeys = getEnabledSections(currentProject);
+
+      if (type === 'sequential') {
+        // Each section one after another, items within section overlap
+        const sectionDays = Math.max(7, Math.floor(totalDays / enabledKeys.length));
+        let offset = 0;
+        enabledKeys.forEach(sKey => {
+          const items = itemTimelines.filter(it => it.sectionKey === sKey);
+          const itemDays = Math.max(3, Math.floor(sectionDays / Math.max(1, items.length)));
+          let itemOffset = 0;
+          items.forEach(item => {
+            item.startDate = addDays(gs, offset + itemOffset);
+            item.endDate = addDays(gs, offset + itemOffset + itemDays - 1);
+            itemOffset += Math.max(1, Math.floor(itemDays * 0.6));
+          });
+          offset += sectionDays;
+        });
+      } else if (type === 'parallel') {
+        // All sections run in parallel, items within section are sequential
+        enabledKeys.forEach(sKey => {
+          const items = itemTimelines.filter(it => it.sectionKey === sKey);
+          const itemDays = Math.max(3, Math.floor(totalDays / Math.max(1, items.length)));
+          let offset = 0;
+          items.forEach(item => {
+            item.startDate = addDays(gs, offset);
+            item.endDate = addDays(gs, offset + itemDays - 1);
+            offset += Math.max(1, Math.floor(itemDays * 0.7));
+          });
+        });
+      } else if (type === 'spread') {
+        // Even spread across all items
+        const allItems = itemTimelines;
+        const perItem = Math.max(3, Math.floor(totalDays / Math.max(1, allItems.length)));
+        let offset = 0;
+        allItems.forEach(item => {
+          item.startDate = addDays(gs, offset);
+          item.endDate = addDays(gs, Math.min(offset + perItem - 1, totalDays - 1));
+          offset += Math.max(1, Math.floor(perItem * 0.5));
+        });
+      } else if (type === 'reset') {
+        const today = toDateStr(new Date());
+        itemTimelines.forEach(item => {
+          item.startDate = today;
+          item.endDate = addDays(today, 7);
+          item.priority = 'medium';
+        });
+      }
+
+      buildTimelineEditor();
+    }
+
+    /* ═══════════════════════════════════════════════
+       STEP 2 — GANTT PREVIEW (WITH DRAG-AND-DROP RESCHEDULING)
+    ═══════════════════════════════════════════════ */
+    function renderGanttPreview() {
+      const container = $('#ganttPreview');
+      const legendEl = $('#ganttLegend');
+      if (!itemTimelines.length) {
+        container.innerHTML = '<p style="color:var(--muted);padding:24px;">No timeline data.</p>';
+        legendEl.innerHTML = '';
+        return;
+      }
+
+      // Calculate global range
+      let globalMin = Infinity, globalMax = -Infinity;
+      itemTimelines.forEach(it => {
+        const s = new Date(it.startDate).getTime();
+        const e = new Date(it.endDate).getTime();
+        if (s < globalMin) globalMin = s;
+        if (e > globalMax) globalMax = e;
+      });
+      if (globalMax - globalMin < 86400000) globalMax = globalMin + 86400000;
+      const range = globalMax - globalMin;
+
+      // Month markers
+      const months = buildMonthMarkers(globalMin, globalMax);
+
+      let html = '<div class="gantt-timeline-header">';
+      html += '<div class="label-col">Sub-item</div>';
+      html += '<div class="gantt-months">';
+      months.forEach(m => {
+        const w = ((m.end - m.start) / range) * 100;
+        html += `<div class="gantt-month" style="width:${w}%">${m.label}</div>`;
+      });
+      html += '</div></div>';
+
+      // Calculate today position for the overlay
+      const todayTs = Date.now();
+      const showToday = todayTs >= globalMin && todayTs <= globalMax;
+      const todayLeftPct = showToday ? (((todayTs - globalMin) / range) * 100) : 0;
+
+      html += '<div class="gantt-body-wrap">';
+
+      // Group by section
+      const enabledKeys = getEnabledSections(currentProject);
+      const renderedSections = [];
+
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        renderedSections.push(sKey);
+
+        const secId = 'gp-' + sKey;
+        html += `<div class="gantt-section-header-row ${SECTION_BG[sKey] || ''}" data-toggle-sec="${secId}">
+          <span class="arrow">&#9660;</span>
+          <span class="sec-label">${esc(SECTION_LABELS[sKey] || sKey)}</span>
+          <span class="sec-cnt">${items.length} items</span>
+        </div>`;
+        html += `<div id="${secId}">`;
+
+        items.forEach((item, idx) => {
+          const s = new Date(item.startDate).getTime();
+          const e = new Date(item.endDate).getTime();
+          const left = ((s - globalMin) / range) * 100;
+          const width = Math.max(0.8, ((e - s) / range) * 100);
+          const startStr = fmtShortDate(new Date(s));
+          const endStr = fmtShortDate(new Date(e));
+          const dur = daysBetween(item.startDate, item.endDate);
+          const prog = Math.max(0, Math.min(100, Number(item.progress || 0)));
+          const depText = Array.isArray(item.dependencies) ? item.dependencies.join(', ') : (item.dependencies || '');
+          const priBadge = item.priority === 'critical' ? ' [CRITICAL]' : item.priority === 'high' ? ' [HIGH]' : '';
+
+          html += `<div class="gantt-row">
+            <div class="gantt-row-label" title="${esc(item.title)}">${esc(item.title)} <span style="color:var(--muted);font-size:0.7rem;">(${prog}%)</span></div>
+            <div class="gantt-row-bar-area">
+              <div class="gantt-bar ${SECTION_COLORS[sKey] || 'bar-electrical'}" data-skey="${sKey}" data-idx="${idx}" style="left:${left}%;width:${width}%">
+                ${prog > 0 ? `<div class="gantt-bar-progress" style="width:${prog}%"></div>` : ''}
+                <div class="gantt-bar-handle left" data-resize="left" title="Drag to change start date"></div>
+                <div class="gantt-bar-handle right" data-resize="right" title="Drag to change end date"></div>
+                <div class="gantt-bar-tooltip">
+                  <strong>${esc(item.title)}</strong>${priBadge}<br>
+                  ${startStr} &rarr; ${endStr} (${dur} days) &bull; Progress: ${prog}%<br>
+                  Assigned: ${esc(item.assignedTo || TEAM_MAP[sKey] || '—')}
+                  ${depText ? `<br>Depends on: ${esc(depText)}` : ''}<br>
+                  <em style="color:#38bdf8;">↔ Drag bar to reschedule &bull; drag either edge to change time span</em>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        });
+
+        html += '</div>';
+      });
+
+      // Today line overlay spanning the full chart height
+      if (showToday) {
+        html += `<div class="gantt-today-overlay" style="left:calc(240px + (100% - 240px) * ${todayLeftPct} / 100);">
+          <div class="today-label">Today</div>
+        </div>`;
+      }
+
+      html += '</div>'; // close gantt-body-wrap
+
+      // Date range footer row (earliest start → latest end)
+      const drStartStr = fmtShortDate(new Date(globalMin));
+      const drEndStr   = fmtShortDate(new Date(globalMax));
+      html += `<div class="gantt-date-range">
+        <div class="dr-label">Date Range</div>
+        <div class="gantt-date-range-bar">
+          <span class="gantt-date-range-start">${drStartStr}</span>
+          <span class="gantt-date-range-end">${drEndStr}</span>
+        </div>
+      </div>`;
+
+      container.innerHTML = html;
+
+      // Collapse toggles
+      container.querySelectorAll('[data-toggle-sec]').forEach(hdr => {
+        hdr.addEventListener('click', () => {
+          const tgt = document.getElementById(hdr.getAttribute('data-toggle-sec'));
+          if (!tgt) return;
+          const hidden = tgt.style.display === 'none';
+          tgt.style.display = hidden ? '' : 'none';
+          hdr.classList.toggle('collapsed', !hidden);
+        });
+      });
+
+      // Drag-and-drop on .gantt-bar: drag the body to reschedule, drag an edge handle to resize
+      container.querySelectorAll('.gantt-bar[data-skey]').forEach(barEl => {
+        barEl.addEventListener('pointerdown', (ev) => {
+          if (ev.button !== 0) return;
+          ev.preventDefault();
+          const sKey = barEl.getAttribute('data-skey');
+          const idx = parseInt(barEl.getAttribute('data-idx'), 10);
+          const secItems = itemTimelines.filter(it => it.sectionKey === sKey);
+          const item = secItems[idx];
+          if (!item) return;
+
+          // 'move' shifts both dates; 'left' / 'right' change only the start / end date
+          const handle = ev.target.closest('[data-resize]');
+          const mode = handle ? handle.getAttribute('data-resize') : 'move';
+
+          const area = barEl.parentElement;
+          const areaWidth = area.getBoundingClientRect().width || 600;
+          const startX = ev.clientX;
+          const origLeftPct = parseFloat(barEl.style.left) || 0;
+          const origWidthPct = parseFloat(barEl.style.width) || 0;
+          const origRightPct = origLeftPct + origWidthPct;
+          const dayPct = (86400000 / range) * 100;
+          const origDays = daysBetween(item.startDate, item.endDate);
+          const tooltip = barEl.querySelector('.gantt-bar-tooltip');
+          const origTooltip = tooltip ? tooltip.innerHTML : '';
+          let daysDelta = 0;
+
+          barEl.classList.add('dragging');
+          if (mode !== 'move') document.body.classList.add('gantt-resizing');
+
+          const onMove = (moveEv) => {
+            const dx = moveEv.clientX - startX;
+            daysDelta = Math.round(((dx / areaWidth) * range) / 86400000);
+            let newStart = item.startDate;
+            let newEnd = item.endDate;
+
+            if (mode === 'move') {
+              const newLeft = Math.max(0, Math.min(98, origLeftPct + (dx / areaWidth) * 100));
+              barEl.style.left = `${newLeft}%`;
+              newStart = addDays(item.startDate, daysDelta);
+              newEnd = addDays(item.endDate, daysDelta);
+            } else if (mode === 'right') {
+              // Keep at least one day: end date can't move before the start date
+              daysDelta = Math.max(daysDelta, 1 - origDays);
+              barEl.style.width = `${Math.max(0.8, origWidthPct + daysDelta * dayPct)}%`;
+              newEnd = addDays(item.endDate, daysDelta);
+            } else {
+              daysDelta = Math.min(daysDelta, origDays - 1);
+              const newLeft = origLeftPct + daysDelta * dayPct;
+              barEl.style.left = `${newLeft}%`;
+              barEl.style.width = `${Math.max(0.8, origRightPct - newLeft)}%`;
+              newStart = addDays(item.startDate, daysDelta);
+            }
+
+            if (tooltip) {
+              tooltip.innerHTML = `<strong>${esc(item.title)}</strong><br>
+                ${fmtShortDate(new Date(newStart))} &rarr; ${fmtShortDate(new Date(newEnd))}
+                (${daysBetween(newStart, newEnd)} days)`;
+            }
+          };
+
+          const onUp = async () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onUp);
+            barEl.classList.remove('dragging');
+            document.body.classList.remove('gantt-resizing');
+            if (tooltip) tooltip.innerHTML = origTooltip;
+            if (daysDelta !== 0) {
+              if (mode !== 'right') item.startDate = addDays(item.startDate, daysDelta);
+              if (mode !== 'left') item.endDate = addDays(item.endDate, daysDelta);
+              renderGanttPreview();
+              const verb = mode === 'move' ? 'Rescheduled' : 'Adjusted time span of';
+              showToast(`${verb} "${item.title}" to ${item.startDate} → ${item.endDate} (${daysBetween(item.startDate, item.endDate)} days)`);
+              if (editingScheduleId && item.id) {
+                try {
+                  await apiFetch(`gantt_schedule/${editingScheduleId}/tasks/${item.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ start_date: item.startDate, end_date: item.endDate })
+                  });
+                } catch (_) {}
+              }
+            }
+          };
+
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+          window.addEventListener('pointercancel', onUp);
+        });
+      });
+
+      // Legend
+      legendEl.innerHTML = renderedSections.map(sKey =>
+        `<div class="legend-item"><div class="legend-swatch ${SECTION_COLORS[sKey]}"></div><span>${esc(SECTION_LABELS[sKey])}</span></div>`
+      ).join('');
+    }
+
+    function buildMonthMarkers(minTs, maxTs) {
+      const markers = [];
+      const start = new Date(minTs); start.setDate(1); start.setHours(0,0,0,0);
+      let current = new Date(start);
+      while (current.getTime() <= maxTs) {
+        const mStart = Math.max(current.getTime(), minTs);
+        const next = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+        const mEnd = Math.min(next.getTime(), maxTs);
+        markers.push({ start: mStart, end: mEnd, label: MONTH_NAMES[current.getMonth()] + ' ' + current.getFullYear() });
+        current = next;
+      }
+      return markers;
+    }
+
+    function fmtShortDate(d) {
+      return MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+
+    /* ═══════════════════════════════════════════════
+       STEP 3 — WORK DISTRIBUTION
+    ═══════════════════════════════════════════════ */
+    function renderDistribution() {
+      const container = $('#distributionContent');
+      const enabledKeys = getEnabledSections(currentProject);
+      const distribution = [];
+      let totalAllDays = 0;
+
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        const totalDays = items.reduce((sum, it) => sum + daysBetween(it.startDate, it.endDate), 0);
+        totalAllDays += totalDays;
+        const starts = items.map(it => new Date(it.startDate).getTime());
+        const ends = items.map(it => new Date(it.endDate).getTime());
+        distribution.push({
+          sectionKey: sKey,
+          label: SECTION_LABELS[sKey] || sKey,
+          team: TEAM_MAP[sKey] || '—',
+          itemCount: items.length,
+          totalDays,
+          startDate: toDateStr(new Date(Math.min(...starts))),
+          endDate: toDateStr(new Date(Math.max(...ends))),
+          criticalCount: items.filter(it => it.priority === 'critical' || it.priority === 'high').length
+        });
+      });
+
+      // Calculate workload percent
+      distribution.forEach(d => {
+        d.workloadPct = totalAllDays > 0 ? ((d.totalDays / totalAllDays) * 100) : 0;
+      });
+
+      let html = `<table class="dist-table">
+        <thead><tr>
+          <th>Discipline</th><th>Assigned Team</th><th>Items</th>
+          <th>Total Days</th><th>Date Range</th><th>High/Critical</th><th>Workload</th>
+        </tr></thead><tbody>`;
+
+      distribution.forEach(d => {
+        html += `<tr>
+          <td><strong>${esc(d.label)}</strong></td>
+          <td>${esc(d.team)}</td>
+          <td>${d.itemCount}</td>
+          <td>${d.totalDays}</td>
+          <td>${fmtShortDate(new Date(d.startDate))} — ${fmtShortDate(new Date(d.endDate))}</td>
+          <td>${d.criticalCount > 0 ? '<span style="color:var(--danger);font-weight:700;">' + d.criticalCount + '</span>' : '0'}</td>
+          <td style="min-width:120px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="workload-bar" style="flex:1;">
+                <div class="workload-fill" style="width:${d.workloadPct}%"></div>
+              </div>
+              <span style="font-size:0.8rem;font-weight:700;color:#93c5fd;">${d.workloadPct.toFixed(1)}%</span>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      const overall = itemTimelines.length;
+      const overallDays = totalAllDays;
+
+      // Calculate calendar days consumed from actual proposed item dates
+      const dateRange = getScheduleDateRange();
+      const calendarDays = dateRange.calendarDays;
+      const rangeStart = dateRange.start;
+      const rangeEnd = dateRange.end;
+
+      html += `</tbody>
+        <tfoot><tr style="border-top:2px solid #1f2937;">
+          <td><strong>Total</strong></td><td>—</td>
+          <td><strong>${overall}</strong></td>
+          <td><strong>${overallDays}</strong></td>
+          <td>—</td>
+          <td><strong>${distribution.reduce((s, d) => s + d.criticalCount, 0)}</strong></td>
+          <td><strong>100%</strong></td>
+        </tr>
+        <tr class="total-days-row">
+          <td colspan="7">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span style="font-weight:600;color:var(--muted);font-size:0.85rem;">Total Days Consumed</span>
+              <span class="total-days-value">
+                <span class="total-days-badge">${calendarDays} calendar days</span>
+              </span>
+              <span class="info-tooltip">
+                <span class="tip-icon">?</span>
+                <span class="tip-text">Total project duration from earliest start to latest end date across all disciplines</span>
+              </span>
+              <span style="font-size:0.78rem;color:var(--muted);margin-left:auto;">
+                ${rangeStart ? fmtShortDate(new Date(rangeStart)) : '—'} &rarr; ${rangeEnd ? fmtShortDate(new Date(rangeEnd)) : '—'}
+              </span>
+            </div>
+          </td>
+        </tr>
+        </tfoot></table>`;
+
+      container.innerHTML = html;
+    }
+
+    function renderCriticalPath() {
+      const container = $('#criticalPathContent');
+      const enabledKeys = getEnabledSections(currentProject);
+
+      // Find longest path, overlapping sections, bottlenecks
+      const sectionRanges = [];
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        const starts = items.map(it => new Date(it.startDate).getTime());
+        const ends = items.map(it => new Date(it.endDate).getTime());
+        sectionRanges.push({
+          key: sKey,
+          label: SECTION_LABELS[sKey],
+          start: Math.min(...starts),
+          end: Math.max(...ends),
+          duration: daysBetween(toDateStr(new Date(Math.min(...starts))), toDateStr(new Date(Math.max(...ends)))),
+          itemCount: items.length,
+          criticalItems: items.filter(it => it.priority === 'critical')
+        });
+      });
+
+      // Sort by duration desc → longest is critical path
+      const sorted = [...sectionRanges].sort((a, b) => b.duration - a.duration);
+      const longest = sorted[0];
+
+      // Identify overlapping sections
+      const overlaps = [];
+      for (let i = 0; i < sectionRanges.length; i++) {
+        for (let j = i + 1; j < sectionRanges.length; j++) {
+          const a = sectionRanges[i], b = sectionRanges[j];
+          if (a.start < b.end && b.start < a.end) {
+            overlaps.push({ a: a.label, b: b.label });
+          }
+        }
+      }
+
+      let html = '<div style="display:grid;gap:14px;">';
+
+      // Critical path
+      if (longest) {
+        html += `<div style="padding:14px 16px;border-radius:10px;border:1px solid rgba(239,68,68,0.25);background:rgba(239,68,68,0.06);">
+          <strong style="color:var(--danger);">Critical Path:</strong>
+          <span>${esc(longest.label)}</span> — <strong>${longest.duration} days</strong>
+          (${fmtShortDate(new Date(longest.start))} to ${fmtShortDate(new Date(longest.end))})
+          <br><span style="font-size:0.82rem;color:var(--muted);">This discipline has the longest duration and drives the project end date.</span>
+        </div>`;
+      }
+
+      // Parallel work
+      if (overlaps.length) {
+        html += `<div style="padding:14px 16px;border-radius:10px;border:1px solid rgba(56,189,248,0.25);background:rgba(56,189,248,0.06);">
+          <strong style="color:var(--accent);">Parallel Work Streams:</strong>
+          <ul style="margin:6px 0 0 18px;font-size:0.85rem;color:var(--text);">
+            ${overlaps.map(o => `<li>${esc(o.a)} overlaps with ${esc(o.b)}</li>`).join('')}
+          </ul>
+          <span style="font-size:0.82rem;color:var(--muted);">Ensure coordination between overlapping teams to avoid conflicts.</span>
+        </div>`;
+      }
+
+      // Recommendations
+      html += `<div style="padding:14px 16px;border-radius:10px;border:1px solid rgba(34,197,94,0.25);background:rgba(34,197,94,0.06);">
+        <strong style="color:var(--success);">Recommendations:</strong>
+        <ul style="margin:6px 0 0 18px;font-size:0.85rem;color:var(--text);">
+          <li>Schedule weekly coordination meetings between overlapping disciplines.</li>
+          <li>Assign a project lead to monitor the critical path (${longest ? esc(longest.label) : 'N/A'}).</li>
+          <li>Mark milestone checkpoints at 25%, 50%, 75% completion of each discipline.</li>
+          <li>Track critical and high-priority items daily; medium and low priority items weekly.</li>
+          ${sorted.length >= 2 ? `<li>Consider starting ${esc(sorted[sorted.length - 1].label)} earlier if resources allow, to create buffer time.</li>` : ''}
+          <li>Maintain a punch list per discipline for final commissioning and sign-off.</li>
+        </ul>
+      </div>`;
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SAVE / LOAD / DELETE / EXPORT
+    ═══════════════════════════════════════════════ */
+    async function saveSchedule() {
+      if (!currentProject) { showToast('No project selected.', 'error'); return; }
+
+      showLoading(true);
+      const scheduleName = $('#scheduleName').value.trim() || 'Proposed Schedule';
+      const userName = getActiveUserName() || 'User';
+
+      // Build distribution data
+      const enabledKeys = getEnabledSections(currentProject);
+      let totalAllDays = 0;
+      const distData = [];
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        const totalDays = items.reduce((sum, it) => sum + daysBetween(it.startDate, it.endDate), 0);
+        totalAllDays += totalDays;
+        const starts = items.map(it => new Date(it.startDate).getTime());
+        const ends = items.map(it => new Date(it.endDate).getTime());
+        distData.push({
+          section_key: sKey,
+          assigned_team: TEAM_MAP[sKey] || '',
+          item_count: items.length,
+          total_days: totalDays,
+          start_date: toDateStr(new Date(Math.min(...starts))),
+          end_date: toDateStr(new Date(Math.max(...ends))),
+          workload_percent: 0
+        });
+      });
+      distData.forEach(d => { d.workload_percent = totalAllDays > 0 ? ((d.total_days / totalAllDays) * 100) : 0; });
+
+      const payload = {
+        project_id: currentProject.id,
+        schedule_name: scheduleName,
+        created_by: userName,
+        status: 'draft',
+        items: itemTimelines.map(it => {
+          const deps = Array.isArray(it.dependencies)
+            ? it.dependencies
+            : String(it.dependencies || '').split(',').map(s => s.trim()).filter(Boolean);
+          return {
+            section_key: it.sectionKey,
+            item_key: it.itemKey,
+            item_title: it.title,
+            start_date: it.startDate,
+            end_date: it.endDate,
+            assigned_to: it.assignedTo || TEAM_MAP[it.sectionKey] || '',
+            priority: it.priority,
+            progress: Number(it.progress || 0),
+            status: Number(it.progress || 0) >= 100 ? 'completed' : (Number(it.progress || 0) > 0 ? 'in_progress' : 'not_started'),
+            dependencies: deps,
+            notes: null
+          };
+        }),
+        distribution: distData
+      };
+
+      try {
+        if (editingScheduleId) {
+          payload.id = editingScheduleId;
+          await apiFetch('gantt_schedule', { method: 'PUT', body: JSON.stringify(payload) });
+          showToast('Schedule updated successfully!');
+        } else {
+          await apiFetch('gantt_schedule', { method: 'POST', body: JSON.stringify(payload) });
+          showToast('Schedule saved successfully!');
+        }
+        editingScheduleId = null;
+        await loadSavedSchedules();
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+
+    async function loadScheduleData(id) {
+      showLoading(true);
+      try {
+        const res = await apiFetch('gantt_schedule?id=' + id);
+        const sched = res.data;
+        if (!sched) { showToast('Schedule not found.', 'error'); showLoading(false); return; }
+
+        $('#scheduleName').value = sched.schedule_name || '';
+        editingScheduleId = sched.id;
+
+        // Rebuild itemTimelines from saved items
+        if (sched.items && sched.items.length) {
+          itemTimelines = sched.items.map(si => ({
+            id: si.id,
+            sectionKey: si.section_key,
+            itemKey: si.item_key,
+            title: si.item_title,
+            startDate: si.start_date,
+            endDate: si.end_date,
+            priority: si.priority || 'medium',
+            progress: Number(si.progress || 0),
+            assignedTo: si.assigned_to || '',
+            dependencies: Array.isArray(si.dependencies) ? si.dependencies.join(', ') : ''
+          }));
+        }
+
+        // Set global dates from extremes
+        if (itemTimelines.length) {
+          const allStarts = itemTimelines.map(it => it.startDate).sort();
+          const allEnds = itemTimelines.map(it => it.endDate).sort();
+          $('#globalStart').value = allStarts[0];
+          $('#globalEnd').value = allEnds[allEnds.length - 1];
+        }
+
+        showToast('Schedule loaded. Proceed to edit the timeline.');
+        goToStep(1);
+      } catch (err) {
+        showToast('Failed to load: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+
+    async function previewSchedule(id) {
+      showLoading(true);
+      try {
+        const res = await apiFetch('gantt_schedule?id=' + id);
+        const sched = res.data;
+        if (!sched) { showToast('Schedule not found.', 'error'); showLoading(false); return; }
+        if (sched.items && sched.items.length) {
+          itemTimelines = sched.items.map(si => ({
+            id: si.id,
+            sectionKey: si.section_key, itemKey: si.item_key,
+            title: si.item_title, startDate: si.start_date,
+            endDate: si.end_date, priority: si.priority || 'medium',
+            progress: Number(si.progress || 0),
+            assignedTo: si.assigned_to || '',
+            dependencies: Array.isArray(si.dependencies) ? si.dependencies.join(', ') : ''
+          }));
+        }
+        editingScheduleId = sched.id;
+        $('#scheduleName').value = sched.schedule_name || '';
+        goToStep(2);
+      } catch (err) {
+        showToast('Failed to preview: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+
+    async function printSchedule(id) {
+      showLoading(true);
+      try {
+        const res = await apiFetch('gantt_schedule?id=' + id);
+        const sched = res.data;
+        if (!sched) { showToast('Schedule not found.', 'error'); showLoading(false); return; }
+        if (sched.items && sched.items.length) {
+          itemTimelines = sched.items.map(si => ({
+            id: si.id,
+            sectionKey: si.section_key, itemKey: si.item_key,
+            title: si.item_title, startDate: si.start_date,
+            endDate: si.end_date, priority: si.priority || 'medium',
+            progress: Number(si.progress || 0),
+            assignedTo: si.assigned_to || '',
+            dependencies: Array.isArray(si.dependencies) ? si.dependencies.join(', ') : ''
+          }));
+        }
+        editingScheduleId = sched.id;
+        $('#scheduleName').value = sched.schedule_name || '';
+        goToStep(2);
+        showLoading(false);
+        setTimeout(() => {
+          populateReportHeader();
+          const page = $('#page2');
+          page.classList.add('print-visible');
+          setTimeout(() => {
+            window.print();
+            page.classList.remove('print-visible');
+          }, 150);
+        }, 400);
+        return;
+      } catch (err) {
+        showToast('Failed to print: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+
+    async function deleteSchedule(id) {
+      if (!confirm('Delete this saved schedule? This cannot be undone.')) return;
+      showLoading(true);
+      try {
+        await apiFetch('gantt_schedule?id=' + id, { method: 'DELETE' });
+        showToast('Schedule deleted.');
+        await loadSavedSchedules();
+      } catch (err) {
+        showToast('Delete failed: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+
+    function exportCSV() {
+      if (!itemTimelines.length) { showToast('No data to export.', 'error'); return; }
+      const rows = [['Section', 'Sub-item', 'Start Date', 'End Date', 'Duration (days)', 'Priority', 'Assigned To']];
+      itemTimelines.forEach(it => {
+        rows.push([
+          SECTION_LABELS[it.sectionKey] || it.sectionKey,
+          it.title,
+          it.startDate,
+          it.endDate,
+          daysBetween(it.startDate, it.endDate),
+          it.priority,
+          it.assignedTo || TEAM_MAP[it.sectionKey] || ''
+        ]);
+      });
+      const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (currentProject ? currentProject.title : 'gantt') + '_schedule.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV exported!');
+    }
+
+    /* ═══════════════════════════════════════════════
+       DATE RANGE SLIDER
+    ═══════════════════════════════════════════════ */
+    let sliderInstance = null;
+
+    function initDateSlider() {
+      const el = document.getElementById('dateRangeSlider');
+      if (!el) return;
+
+      const gs = $('#globalStart').value;
+      const ge = $('#globalEnd').value;
+      if (!gs || !ge) return;
+
+      const minTs = new Date(gs).getTime();
+      const maxTs = new Date(ge).getTime();
+      if (maxTs <= minTs) return;
+
+      // Destroy previous instance
+      if (sliderInstance) { sliderInstance.destroy(); sliderInstance = null; }
+
+      sliderInstance = noUiSlider.create(el, {
+        start: [minTs, maxTs],
+        connect: true,
+        range: {
+          min: minTs - 30 * 86400000,  // 30 days before start
+          max: maxTs + 30 * 86400000   // 30 days after end
+        },
+        step: 86400000, // 1 day
+        tooltips: [
+          { to: v => fmtShortDate(new Date(v)) },
+          { to: v => fmtShortDate(new Date(v)) }
+        ]
+      });
+
+      sliderInstance.on('update', (values) => {
+        const start = new Date(Number(values[0]));
+        const end = new Date(Number(values[1]));
+        $('#sliderStartLabel').textContent = fmtShortDate(start);
+        $('#sliderEndLabel').textContent = fmtShortDate(end);
+        const days = Math.ceil((end - start) / 86400000);
+        $('#sliderDuration').textContent = days;
+      });
+
+      sliderInstance.on('change', (values) => {
+        const start = new Date(Number(values[0]));
+        const end = new Date(Number(values[1]));
+        $('#globalStart').value = toDateStr(start);
+        $('#globalEnd').value = toDateStr(end);
+      });
+
+      // Initial labels
+      $('#sliderStartLabel').textContent = fmtShortDate(new Date(gs));
+      $('#sliderEndLabel').textContent = fmtShortDate(new Date(ge));
+      const days = Math.ceil((maxTs - minTs) / 86400000);
+      $('#sliderDuration').textContent = days;
+    }
+
+    function updateSliderFromInputs() {
+      if (!sliderInstance) return;
+      const gs = $('#globalStart').value;
+      const ge = $('#globalEnd').value;
+      if (!gs || !ge) return;
+      const minTs = new Date(gs).getTime();
+      const maxTs = new Date(ge).getTime();
+      if (maxTs <= minTs) return;
+
+      sliderInstance.updateOptions({
+        range: {
+          min: minTs - 30 * 86400000,
+          max: maxTs + 30 * 86400000
+        }
+      }, false);
+      sliderInstance.set([minTs, maxTs]);
+    }
+
+    /* ═══════════════════════════════════════════════
+       REPORT HEADER & PRINT
+    ═══════════════════════════════════════════════ */
+    function populateReportHeader() {
+      const projTitle = currentProject ? currentProject.title : '—';
+      const schedName = $('#scheduleName').value || 'Proposed Schedule';
+      const dateRange = getScheduleDateRange();
+      const calendarDays = dateRange.calendarDays;
+      const enabledKeys = currentProject ? getEnabledSections(currentProject) : [];
+      const rangeStr = (dateRange.start ? fmtShortDate(new Date(dateRange.start)) : '—') + ' — ' + (dateRange.end ? fmtShortDate(new Date(dateRange.end)) : '—');
+      const discStr = enabledKeys.map(k => SECTION_LABELS[k] || k).join(', ') || '—';
+      const genStr = fmtShortDate(new Date());
+
+      $('#reportProject').textContent = projTitle;
+      $('#reportScheduleName').textContent = schedName;
+      $('#reportDateRange').textContent = rangeStr;
+      $('#reportDuration').textContent = calendarDays;
+      $('#reportDisciplines').textContent = discStr;
+      $('#reportGenerated').textContent = genStr;
+      $('#reportTitle').textContent = (projTitle || 'Project') + ' — Gantt Schedule Report';
+
+      if ($('#chartReportProject')) $('#chartReportProject').textContent = projTitle;
+      if ($('#chartReportScheduleName')) $('#chartReportScheduleName').textContent = schedName;
+      if ($('#chartReportDateRange')) $('#chartReportDateRange').textContent = rangeStr;
+      if ($('#chartReportDuration')) $('#chartReportDuration').textContent = calendarDays;
+      if ($('#chartReportDisciplines')) $('#chartReportDisciplines').textContent = discStr;
+      if ($('#chartReportGenerated')) $('#chartReportGenerated').textContent = genStr;
+      if ($('#chartReportTitle')) $('#chartReportTitle').textContent = (projTitle || 'Project') + ' — Gantt Chart Schedule';
+    }
+
+    /** Render the Gantt chart as a <table> for the printed report: the month header
+        repeats on each page, rows are never split, and each section is its own <tbody>. */
+    function renderGanttPrintTable() {
+      const container = $('#ganttPrintPreview');
+      if (!itemTimelines.length) {
+        container.innerHTML = '<p style="color:#475569;padding:12px;">No timeline data.</p>';
+        return;
+      }
+
+      let globalMin = Infinity, globalMax = -Infinity;
+      itemTimelines.forEach(it => {
+        const s = new Date(it.startDate).getTime();
+        const e = new Date(it.endDate).getTime();
+        if (s < globalMin) globalMin = s;
+        if (e > globalMax) globalMax = e;
+      });
+      if (globalMax - globalMin < 86400000) globalMax = globalMin + 86400000;
+      const range = globalMax - globalMin;
+      const pct = (ts) => ((ts - globalMin) / range) * 100;
+
+      const months = buildMonthMarkers(globalMin, globalMax);
+      const todayTs = Date.now();
+      const showToday = todayTs >= globalMin && todayTs <= globalMax;
+      const todayPct = pct(todayTs);
+
+      // Month gridlines + today line, drawn inside every row's track
+      const trackDecor = months.slice(1).map(m => `<div class="gpt-grid" style="left:${pct(m.start)}%"></div>`).join('')
+        + (showToday ? `<div class="gpt-today" style="left:${todayPct}%"></div>` : '');
+
+      let html = `<table class="gantt-print-table">
+        <colgroup><col class="gpt-label-col"><col></colgroup>
+        <thead><tr>
+          <th>Sub-item</th>
+          <th class="gpt-months-cell">
+            <div class="gpt-months">${months.map(m =>
+              `<div class="gpt-month" style="width:${((m.end - m.start) / range) * 100}%">${m.label}</div>`).join('')}
+            </div>
+            ${showToday ? `<span class="gpt-today-tag" style="left:${todayPct}%">Today</span>` : ''}
+          </th>
+        </tr></thead>`;
+
+      getEnabledSections(currentProject).forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        html += `<tbody>
+          <tr class="gpt-section"><td colspan="2">
+            <div class="gpt-section-label ${SECTION_BG[sKey] || ''}">
+              ${esc(SECTION_LABELS[sKey] || sKey)} <span class="gpt-cnt">${items.length} items</span>
+            </div>
+          </td></tr>`;
+        items.forEach(item => {
+          const s = new Date(item.startDate).getTime();
+          const e = new Date(item.endDate).getTime();
+          const prog = Math.max(0, Math.min(100, Number(item.progress || 0)));
+          const priBadge = item.priority === 'critical' ? ' · CRITICAL' : item.priority === 'high' ? ' · HIGH' : '';
+          html += `<tr>
+            <td class="gpt-label">
+              <span class="gpt-title" title="${esc(item.title)}">${esc(item.title)}</span>
+              <span class="gpt-dates">${fmtShortDate(new Date(s))} – ${fmtShortDate(new Date(e))} · ${daysBetween(item.startDate, item.endDate)}d · ${prog}%${priBadge}</span>
+            </td>
+            <td><div class="gpt-track">
+              ${trackDecor}
+              <div class="gpt-bar ${SECTION_COLORS[sKey] || 'bar-electrical'}" style="left:${pct(s)}%;width:${Math.max(0.4, ((e - s) / range) * 100)}%">
+                ${prog > 0 ? `<div class="gpt-bar-progress" style="width:${prog}%"></div>` : ''}
+              </div>
+            </div></td>
+          </tr>`;
+        });
+        html += '</tbody>';
+      });
+
+      html += `<tbody><tr class="gpt-range">
+        <td class="gpt-range-label">Date Range</td>
+        <td><div class="gpt-range-dates"><span>${fmtShortDate(new Date(globalMin))}</span><span>${fmtShortDate(new Date(globalMax))}</span></div></td>
+      </tr></tbody></table>`;
+
+      container.innerHTML = html;
+    }
+
+    function generatePrintReport() {
+      populateReportHeader();
+
+      const includeGantt = $('#toggleGanttInPrint').checked;
+      const ganttPanel = $('#ganttPrintPanel');
+
+      if (includeGantt) {
+        // Build a print-friendly table version of the chart (header repeats on every page)
+        renderGanttPrintTable();
+        const srcLegend = $('#ganttLegend');
+        $('#ganttPrintLegend').innerHTML = srcLegend ? srcLegend.innerHTML : '';
+        ganttPanel.style.display = '';
+        ganttPanel.classList.remove('gantt-hidden-for-print');
+      } else {
+        ganttPanel.style.display = 'none';
+        ganttPanel.classList.add('gantt-hidden-for-print');
+      }
+
+      // Mark pages as print-visible
+      const page2 = $('#page2');
+      const page3 = $('#page3');
+      page3.classList.add('print-visible');
+
+      setTimeout(() => {
+        window.print();
+        // Clean up
+        page3.classList.remove('print-visible');
+        ganttPanel.style.display = 'none';
+      }, 300);
+    }
+
+    /* ═══════════════════════════════════════════════
+       PDF EXPORT (jsPDF)
+    ═══════════════════════════════════════════════ */
+    function exportPDF() {
+      if (!itemTimelines.length) { showToast('No data to export.', 'error'); return; }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+
+      const projTitle = currentProject ? currentProject.title : 'Project';
+      const schedName = $('#scheduleName').value || 'Proposed Schedule';
+      const dateRange = getScheduleDateRange();
+      const calendarDays = dateRange.calendarDays;
+      const enabledKeys = getEnabledSections(currentProject);
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont(undefined, 'bold');
+      doc.text(projTitle + ' — Gantt Schedule Report', 14, 18);
+
+      // Meta info
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      let y = 26;
+      doc.text('Schedule: ' + schedName, 14, y);
+      doc.text('Generated: ' + fmtShortDate(new Date()), pageW - 14, y, { align: 'right' });
+      y += 5;
+      doc.text('Date Range: ' + (dateRange.start ? fmtShortDate(new Date(dateRange.start)) : '—') + ' — ' + (dateRange.end ? fmtShortDate(new Date(dateRange.end)) : '—'), 14, y);
+      doc.text('Duration: ' + calendarDays + ' calendar days', pageW - 14, y, { align: 'right' });
+      y += 5;
+      doc.text('Disciplines: ' + enabledKeys.map(k => SECTION_LABELS[k] || k).join(', '), 14, y);
+      y += 3;
+
+      // Separator line
+      doc.setDrawColor(200);
+      doc.line(14, y, pageW - 14, y);
+      y += 6;
+
+      // Work Distribution table
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Work Distribution', 14, y);
+      y += 2;
+
+      const tableHead = [['Discipline', 'Team', 'Items', 'Total Days', 'Date Range', 'Priority Items', 'Workload %']];
+      const tableBody = [];
+      let totalAllDays = 0;
+
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        const totalDays = items.reduce((sum, it) => sum + daysBetween(it.startDate, it.endDate), 0);
+        totalAllDays += totalDays;
+        const starts = items.map(it => new Date(it.startDate).getTime());
+        const ends = items.map(it => new Date(it.endDate).getTime());
+        tableBody.push([
+          SECTION_LABELS[sKey] || sKey,
+          TEAM_MAP[sKey] || '—',
+          items.length.toString(),
+          totalDays.toString(),
+          fmtShortDate(new Date(Math.min(...starts))) + ' — ' + fmtShortDate(new Date(Math.max(...ends))),
+          items.filter(it => it.priority === 'critical' || it.priority === 'high').length.toString(),
+          '—' // placeholder
+        ]);
+      });
+
+      // Calculate workload percentages
+      tableBody.forEach(row => {
+        const days = parseInt(row[3], 10);
+        row[6] = totalAllDays > 0 ? ((days / totalAllDays) * 100).toFixed(1) + '%' : '0%';
+      });
+
+      // Add totals row
+      tableBody.push([
+        'TOTAL', '—',
+        itemTimelines.length.toString(),
+        totalAllDays.toString(),
+        '—',
+        tableBody.reduce((s, r) => s + parseInt(r[5], 10), 0).toString(),
+        '100%'
+      ]);
+
+      doc.autoTable({
+        startY: y,
+        head: tableHead,
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 41, 59], textColor: [148, 163, 184], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8 },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        footStyles: { fillColor: [240, 245, 255], fontStyle: 'bold' },
+        margin: { left: 14, right: 14 }
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+
+      // Total Days Consumed
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Total Days Consumed: ' + calendarDays + ' calendar days', 14, y);
+      y += 8;
+
+      // Item details table on next page
+      doc.addPage();
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Schedule Item Details', 14, 18);
+
+      const itemHead = [['Discipline', 'Sub-item', 'Start', 'End', 'Days', 'Priority', 'Assigned To']];
+      const itemBody = itemTimelines.map(it => [
+        SECTION_LABELS[it.sectionKey] || it.sectionKey,
+        it.title,
+        it.startDate,
+        it.endDate,
+        daysBetween(it.startDate, it.endDate).toString(),
+        it.priority,
+        it.assignedTo || TEAM_MAP[it.sectionKey] || ''
+      ]);
+
+      doc.autoTable({
+        startY: 24,
+        head: itemHead,
+        body: itemBody,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 41, 59], textColor: [148, 163, 184], fontSize: 7, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7 },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        margin: { left: 14, right: 14 },
+        didParseCell: function(data) {
+          if (data.section === 'body' && data.column.index === 5) {
+            const val = data.cell.raw;
+            if (val === 'critical') data.cell.styles.textColor = [220, 38, 38];
+            else if (val === 'high') data.cell.styles.textColor = [217, 119, 6];
+          }
+        }
+      });
+
+      // Footer on each page
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(150);
+        doc.text('Generated by Project Tracker — Gantt Chart Creator', 14, doc.internal.pageSize.getHeight() - 8);
+        doc.text('Page ' + i + ' of ' + totalPages, pageW - 14, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
+        doc.setTextColor(0);
+      }
+
+      const filename = (projTitle || 'gantt') + '_schedule_report.pdf';
+      doc.save(filename);
+      showToast('PDF exported!');
+    }
+
+    /* ═══════════════════════════════════════════════
+       EXCEL EXPORT (CSV with BOM for Excel)
+    ═══════════════════════════════════════════════ */
+    function exportExcel() {
+      if (!itemTimelines.length) { showToast('No data to export.', 'error'); return; }
+
+      const projTitle = currentProject ? currentProject.title : 'Project';
+      const schedName = $('#scheduleName').value || 'Proposed Schedule';
+      const dateRange = getScheduleDateRange();
+      const calendarDays = dateRange.calendarDays;
+      const enabledKeys = getEnabledSections(currentProject);
+
+      const rows = [];
+
+      // Report header rows
+      rows.push(['Project Gantt Schedule Report']);
+      rows.push(['Project', projTitle]);
+      rows.push(['Schedule', schedName]);
+      rows.push(['Date Range', (dateRange.start || '—') + ' to ' + (dateRange.end || '—')]);
+      rows.push(['Total Duration', calendarDays + ' calendar days']);
+      rows.push(['Disciplines', enabledKeys.map(k => SECTION_LABELS[k] || k).join(', ')]);
+      rows.push(['Generated', fmtShortDate(new Date())]);
+      rows.push([]);
+
+      // Work Distribution summary
+      rows.push(['WORK DISTRIBUTION SUMMARY']);
+      rows.push(['Discipline', 'Team', 'Items', 'Total Days', 'Start Date', 'End Date', 'Priority Items', 'Workload %']);
+
+      let totalAllDays = 0;
+      const distRows = [];
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        const totalDays = items.reduce((sum, it) => sum + daysBetween(it.startDate, it.endDate), 0);
+        totalAllDays += totalDays;
+        const starts = items.map(it => new Date(it.startDate).getTime());
+        const ends = items.map(it => new Date(it.endDate).getTime());
+        distRows.push({
+          label: SECTION_LABELS[sKey] || sKey,
+          team: TEAM_MAP[sKey] || '—',
+          count: items.length,
+          days: totalDays,
+          start: toDateStr(new Date(Math.min(...starts))),
+          end: toDateStr(new Date(Math.max(...ends))),
+          critCount: items.filter(it => it.priority === 'critical' || it.priority === 'high').length
+        });
+      });
+
+      distRows.forEach(d => {
+        const pct = totalAllDays > 0 ? ((d.days / totalAllDays) * 100).toFixed(1) + '%' : '0%';
+        rows.push([d.label, d.team, d.count, d.days, d.start, d.end, d.critCount, pct]);
+      });
+
+      rows.push(['Total', '—', itemTimelines.length, totalAllDays, '', '', distRows.reduce((s, d) => s + d.critCount, 0), '100%']);
+      rows.push(['Total Days Consumed', calendarDays + ' calendar days']);
+      rows.push([]);
+
+      // Item details
+      rows.push(['SCHEDULE ITEM DETAILS']);
+      rows.push(['Discipline', 'Sub-item', 'Start Date', 'End Date', 'Duration (days)', 'Priority', 'Assigned To']);
+      itemTimelines.forEach(it => {
+        rows.push([
+          SECTION_LABELS[it.sectionKey] || it.sectionKey,
+          it.title,
+          it.startDate,
+          it.endDate,
+          daysBetween(it.startDate, it.endDate),
+          it.priority,
+          it.assignedTo || TEAM_MAP[it.sectionKey] || ''
+        ]);
+      });
+
+      // Build CSV with BOM for Excel compatibility
+      const csvContent = '\uFEFF' + rows.map(r =>
+        r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')
+      ).join('\r\n');
+
+      const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (projTitle || 'gantt') + '_schedule_report.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Excel file downloaded!');
+    }
+
+    /* ═══════════════════════════════════════════════
+       PNG IMAGE EXPORT (High-DPI HTML5 Canvas)
+    ═══════════════════════════════════════════════ */
+    function exportPNG() {
+      if (!itemTimelines.length) { showToast('No data to export.', 'error'); return; }
+
+      const projTitle = currentProject ? currentProject.title : 'Project';
+      const schedName = $('#scheduleName').value || 'Proposed Schedule';
+      const dateRange = getScheduleDateRange();
+      const enabledKeys = getEnabledSections(currentProject);
+
+      let globalMin = Infinity, globalMax = -Infinity;
+      itemTimelines.forEach(it => {
+        const s = new Date(it.startDate).getTime();
+        const e = new Date(it.endDate).getTime();
+        if (s < globalMin) globalMin = s;
+        if (e > globalMax) globalMax = e;
+      });
+      if (globalMax - globalMin < 86400000) globalMax = globalMin + 86400000;
+      const range = globalMax - globalMin;
+
+      const HEX_COLORS = {
+        electrical: '#f59e0b',
+        architectural: '#8b5cf6',
+        mechanical: '#22c55e',
+        plumbing: '#38bdf8',
+        electronics: '#f43f5e',
+        general: '#f97316',
+        others: '#14b8a6'
+      };
+      // Darker shades so section labels stay readable on the white background
+      const LABEL_COLORS = {
+        electrical: '#b45309',
+        architectural: '#6d28d9',
+        mechanical: '#15803d',
+        plumbing: '#0369a1',
+        electronics: '#be123c',
+        general: '#c2410c',
+        others: '#0f766e'
+      };
+
+      const rows = [];
+      enabledKeys.forEach(sKey => {
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items.length) return;
+        rows.push({ type: 'section', sKey, label: SECTION_LABELS[sKey] || sKey, count: items.length });
+        items.forEach(item => rows.push({ type: 'item', sKey, item }));
+      });
+
+      const scale = 2;
+      const width = 1280;
+      const labelW = 280;
+      const chartX = labelW + 24;
+      const chartW = width - chartX - 32;
+      const rowH = 30;
+      const headerH = 110;
+      const footerH = 60;
+      const height = headerH + rows.length * rowH + footerH;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+
+      // Background (white to save ink when printing)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      // Title & metadata
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 20px system-ui, sans-serif';
+      ctx.fillText(`${projTitle} — ${schedName}`, 24, 36);
+
+      ctx.fillStyle = '#475569';
+      ctx.font = '13px system-ui, sans-serif';
+      ctx.fillText(`Date Range: ${dateRange.start || '—'} → ${dateRange.end || '—'} (${dateRange.calendarDays} days)   |   Generated: ${fmtShortDate(new Date())}`, 24, 58);
+
+      // Month headers
+      const months = buildMonthMarkers(globalMin, globalMax);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      months.forEach(m => {
+        const mx = chartX + ((m.start - globalMin) / range) * chartW;
+        ctx.beginPath();
+        ctx.moveTo(mx, 75);
+        ctx.lineTo(mx, height - footerH);
+        ctx.stroke();
+        ctx.fillStyle = '#475569';
+        ctx.font = 'bold 11px system-ui, sans-serif';
+        ctx.fillText(m.label, mx + 6, 92);
+      });
+
+      ctx.beginPath();
+      ctx.moveTo(24, 102);
+      ctx.lineTo(width - 24, 102);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.stroke();
+
+      // Rows
+      let y = headerH;
+      rows.forEach(r => {
+        if (r.type === 'section') {
+          ctx.fillStyle = '#f1f5f9';
+          ctx.fillRect(24, y, width - 48, rowH - 2);
+          ctx.fillStyle = LABEL_COLORS[r.sKey] || getSectionColor(r.sKey).label;
+          ctx.font = 'bold 13px system-ui, sans-serif';
+          ctx.fillText(`▾ ${r.label} (${r.count} tasks)`, 34, y + 19);
+        } else {
+          const it = r.item;
+          ctx.fillStyle = '#1e293b';
+          ctx.font = '12px system-ui, sans-serif';
+          const labelTxt = it.title.length > 32 ? it.title.slice(0, 30) + '…' : it.title;
+          ctx.fillText(`${labelTxt} (${Number(it.progress || 0)}%)`, 34, y + 19);
+
+          const s = new Date(it.startDate).getTime();
+          const e = new Date(it.endDate).getTime();
+          const bx = chartX + ((s - globalMin) / range) * chartW;
+          const bw = Math.max(8, ((e - s) / range) * chartW);
+
+          ctx.fillStyle = HEX_COLORS[r.sKey] || getSectionColor(r.sKey).solid;
+          ctx.beginPath();
+          ctx.roundRect(bx, y + 6, bw, 16, 4);
+          ctx.fill();
+
+          const prog = Math.max(0, Math.min(100, Number(it.progress || 0)));
+          if (prog > 0) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            ctx.fillRect(bx, y + 6, (bw * prog) / 100, 16);
+          }
+        }
+        y += rowH;
+      });
+
+      // Footer
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('Exported from Project Tracker — Gantt Chart Module (PNG High-DPI Export)', 24, height - 20);
+
+      canvas.toBlob((blob) => {
+        if (!blob) { showToast('PNG export failed.', 'error'); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(projTitle || 'gantt').replace(/\s+/g, '_')}_gantt_chart.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('PNG image exported!');
+      }, 'image/png');
+    }
+
+    /* ═══════════════════════════════════════════════
+       EVENT WIRING
+    ═══════════════════════════════════════════════ */
+    function wireEvents() {
+      // Back
+      // "Gantt Home" on every step: reload the creator fresh at step 1
+      $$('[data-gantt-home]').forEach((btn) => btn.addEventListener('click', () => {
+        if (currentStep > 0 && !window.confirm('Return to Gantt Home? Unsaved changes to this schedule will be lost.')) {
+          return;
+        }
+        window.location.href = 'gantt_chart_creator.html';
+      }));
+
+      $('#btnBack').addEventListener('click', () => {
+        const ref = document.referrer;
+        if (ref && (ref.includes('user_index') || ref.includes('index.html') || ref.includes('admin_dashboard'))) {
+          window.history.back();
+        } else {
+          window.location.href = 'user_index.html';
+        }
+      });
+
+      // Project select
+      $('#projectSelect').addEventListener('change', () => {
+        editingScheduleId = null;
+        onProjectChange();
+      });
+
+      // Step nav
+      $('#btnNext0').addEventListener('click', () => {
+        if (!currentProject) { showToast('Select a project first.', 'error'); return; }
+        goToStep(1);
+      });
+      $('#btnPrev1').addEventListener('click', () => goToStep(0));
+      $('#btnNext1').addEventListener('click', () => {
+        // Sync any date inputs that may have been changed
+        syncInputsToTimelines();
+        goToStep(2);
+      });
+      $('#btnPrev2').addEventListener('click', () => goToStep(1));
+      $('#btnNext2').addEventListener('click', () => goToStep(3));
+      $('#btnPrev3').addEventListener('click', () => goToStep(2));
+
+      // Export PNG (Step 2 & Step 3)
+      const btnPng = $('#btnExportPng');
+      if (btnPng) btnPng.addEventListener('click', () => exportPNG());
+      const btnPngReport = $('#btnExportPngReport');
+      if (btnPngReport) btnPngReport.addEventListener('click', () => exportPNG());
+
+      // Print chart (Step 2)
+      $('#btnPrint').addEventListener('click', () => {
+        populateReportHeader();
+        const page = $('#page2');
+        page.classList.add('print-visible');
+        setTimeout(() => {
+          window.print();
+          page.classList.remove('print-visible');
+        }, 150);
+      });
+
+      window.addEventListener('beforeprint', () => {
+        populateReportHeader();
+      });
+
+      // Print report (Step 3)
+      $('#btnPrintReport').addEventListener('click', () => generatePrintReport());
+
+      // PDF export
+      $('#btnExportPdf').addEventListener('click', () => exportPDF());
+
+      // Excel export
+      $('#btnExportExcel').addEventListener('click', () => exportExcel());
+
+      // Save
+      $('#btnSave').addEventListener('click', () => saveSchedule());
+
+      // Export CSV
+      $('#btnExport').addEventListener('click', () => exportCSV());
+
+      // Date inputs → update slider
+      $('#globalStart').addEventListener('change', () => updateSliderFromInputs());
+      $('#globalEnd').addEventListener('change', () => updateSliderFromInputs());
+
+      // Presets
+      $$('[data-preset]').forEach(btn => {
+        btn.addEventListener('click', () => applyPreset(btn.getAttribute('data-preset')));
+      });
+
+      // Saved schedule actions (delegated)
+      $('#savedSchedulesList').addEventListener('click', (e) => {
+        const previewBtn = e.target.closest('[data-preview]');
+        const printBtn = e.target.closest('[data-print]');
+        const loadBtn = e.target.closest('[data-load]');
+        const delBtn = e.target.closest('[data-del]');
+        if (previewBtn) previewSchedule(parseInt(previewBtn.getAttribute('data-preview'), 10));
+        else if (printBtn) printSchedule(parseInt(printBtn.getAttribute('data-print'), 10));
+        else if (loadBtn) loadScheduleData(parseInt(loadBtn.getAttribute('data-load'), 10));
+        else if (delBtn) deleteSchedule(parseInt(delBtn.getAttribute('data-del'), 10));
+      });
+    }
+
+    function syncInputsToTimelines() {
+      const container = $('#timelineEditor');
+      if (!container) return;
+      container.querySelectorAll('[data-field]').forEach(el => {
+        const sKey = el.getAttribute('data-skey');
+        const idx = parseInt(el.getAttribute('data-idx'), 10);
+        const field = el.getAttribute('data-field');
+        const items = itemTimelines.filter(it => it.sectionKey === sKey);
+        if (!items[idx]) return;
+        if (field === 'start') items[idx].startDate = el.value;
+        if (field === 'end') items[idx].endDate = el.value;
+        if (field === 'priority') items[idx].priority = el.value;
+        if (field === 'progress') items[idx].progress = Math.max(0, Math.min(100, Number(el.value || 0)));
+        if (field === 'assigned') items[idx].assignedTo = el.value;
+        if (field === 'dependencies') items[idx].dependencies = el.value;
+      });
+    }
+
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+  <title>Gantt Chart</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+      background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 40px 24px 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 1.9rem;
+      letter-spacing: 0.2px;
+    }
+
+    .title-block p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    main {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+      flex: 1;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: translateY(1px); }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+      border: 1px solid #1f2937;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .panel h2 {
+      margin: 0 0 6px;
+      font-size: 1.25rem;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* ---- Gantt Chart ---- */
+    .gantt-section {
+      margin-top: 24px;
+    }
+
+    .gantt-section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      margin-bottom: 2px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .gantt-section-header:hover {
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .gantt-section-header .arrow {
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+      color: var(--accent);
+    }
+
+    .gantt-section-header.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .gantt-section-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    .gantt-section-count {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .gantt-items {
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .gantt-items.collapsed {
+      max-height: 0 !important;
+    }
+
+    /* ---- Timeline header ---- */
+    .gantt-timeline-wrapper {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    .gantt-table {
+      min-width: 900px;
+      width: 100%;
+    }
+
+    .gantt-timeline-header {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      border-bottom: 1px solid #1f2937;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .gantt-timeline-header .label-col {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 16px;
+    }
+
+    .gantt-months {
+      display: flex;
+      position: relative;
+    }
+
+    .gantt-month {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      border-left: 1px solid rgba(31, 41, 55, 0.5);
+      padding: 0 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---- Gantt row ---- */
+    .gantt-row {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      align-items: center;
+      min-height: 36px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.3);
+    }
+
+    .gantt-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .gantt-row-label {
+      font-size: 0.82rem;
+      color: var(--text);
+      padding: 6px 16px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .gantt-row-bar-area {
+      position: relative;
+      height: 24px;
+    }
+
+    .gantt-bar {
+      position: absolute;
+      height: 18px;
+      top: 3px;
+      border-radius: 4px;
+      min-width: 6px;
+      transition: opacity 0.15s;
+    }
+
+    .gantt-bar:hover {
+      opacity: 0.85;
+    }
+
+    .gantt-bar-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: var(--text);
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .gantt-bar:hover .gantt-bar-tooltip {
+      display: block;
+    }
+
+    /* Section colors */
+    .bar-electrical    { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .bar-architectural { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .bar-mechanical    { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .bar-plumbing      { background: linear-gradient(90deg, #38bdf8, #7dd3fc); }
+    .bar-electronics   { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+    .bar-general       { background: linear-gradient(90deg, #f97316, #fb923c); }
+    .bar-others        { background: linear-gradient(90deg, #0d9488, #2dd4bf); }
+
+    /* ---- Legend ---- */
+    .gantt-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #1f2937;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .legend-swatch {
+      width: 20px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* ---- Loading / Empty ---- */
+    .loading, .empty-msg {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--muted);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ---- Print ---- */
+    .btn-print {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: var(--accent);
+    }
+
+    /* ---- Print-only report (summary + sub-item details) ---- */
+    .print-only { display: none; }
+
+    @media print {
+      /* Real margins on every page (body padding only applied to the first one) + page numbers */
+      @page {
+        size: A4 landscape;
+        margin: 12mm 12mm 14mm;
+        @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #64748b; }
+      }
+      body {
+        background: #fff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #agyRbacTopbar, #agyChangePwdModal, #agyToastContainer, .no-print, .btn, header .btn {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+      }
+      header {
+        max-width: 100% !important;
+        padding: 0 0 12px 0 !important;
+        margin: 0 0 14px 0 !important;
+        border-bottom: 2px solid #0f172a !important;
+      }
+      .title-block h1 { color: #0f172a !important; font-size: 1.45rem !important; }
+      .title-block p { color: #475569 !important; font-size: 0.85rem !important; margin-top: 4px !important; }
+      main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      .panel { border: 1px solid #cbd5e1 !important; border-radius: 10px !important; box-shadow: none !important; background: #fff !important; padding: 14px 16px !important; margin: 0 !important; }
+      .gantt-timeline-wrapper { overflow: visible !important; margin-top: 8px !important; }
+      .gantt-table { min-width: 0 !important; width: 100% !important; }
+      .gantt-section { margin-top: 14px !important; break-inside: avoid; }
+      .gantt-section-header { background: #f1f5f9 !important; border: 1px solid #cbd5e1 !important; padding: 8px 12px !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .gantt-section-header .arrow { color: #1e40af !important; }
+      .gantt-section-title { color: #1e3a8a !important; font-size: 0.92rem !important; }
+      .gantt-section-count { color: #475569 !important; font-weight: 600 !important; }
+      .gantt-items.collapsed { max-height: none !important; }
+      .gantt-row { min-height: 30px !important; border-bottom: 1px solid #e2e8f0 !important; }
+      .gantt-row-label { color: #0f172a !important; font-weight: 500 !important; }
+      .gantt-month { color: #334155 !important; font-weight: 600 !important; border-left: 1px solid #cbd5e1 !important; }
+      .gantt-timeline-header { position: static !important; border-bottom: 2px solid #cbd5e1 !important; background: #f8fafc !important; padding: 6px 0 !important; }
+      .gantt-timeline-header .label-col { color: #334155 !important; font-weight: 700 !important; }
+      .gantt-bar, .legend-swatch { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12) !important; }
+      .gantt-bar-tooltip { display: none !important; }
+      .gantt-legend { border-top: 1px solid #cbd5e1 !important; padding-top: 12px !important; margin-top: 14px !important; }
+      .gantt-legend .legend-item { color: #1e293b !important; font-weight: 600 !important; }
+
+      /* Keep rows whole and headings with their content; long sections may continue on the next page */
+      .gantt-section { break-inside: auto !important; page-break-inside: auto !important; }
+      .gantt-row, .gantt-timeline-header, .gantt-legend { break-inside: avoid; page-break-inside: avoid; }
+      .gantt-section-header { break-after: avoid; page-break-after: avoid; }
+      header { break-after: avoid; }
+
+      .print-only { display: block !important; }
+
+      /* Summary strip */
+      .pr-summary { margin: 0 0 12px; break-inside: avoid; }
+      .pr-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .pr-kpi { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; background: #f8fafc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pr-kpi .k { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; font-weight: 700; }
+      .pr-kpi .v { font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-top: 2px; }
+      .pr-kpi .s { font-size: 0.66rem; color: #64748b; margin-top: 1px; }
+      .pr-basis { font-size: 0.68rem; color: #475569; margin: 6px 0 0; }
+
+      /* Sub-item details */
+      .pr-details { margin-top: 22px; }
+      .pr-details h2 { font-size: 1.05rem; color: #0f172a; margin: 0 0 2px; break-after: avoid; }
+      .pr-details .pr-sub { break-after: avoid; }
+      .pr-details .pr-sub { font-size: 0.72rem; color: #475569; margin: 0 0 10px; }
+      .pr-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.72rem; color: #0f172a; }
+      .pr-table thead { display: table-header-group; }
+      .pr-table th {
+        text-align: left; padding: 6px 6px; background: #f1f5f9; color: #334155;
+        font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em;
+        border-bottom: 2px solid #cbd5e1; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      .pr-table td { padding: 5px 6px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+      .pr-table tr { break-inside: avoid; page-break-inside: avoid; }
+      .pr-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+      .pr-table .muted { color: #94a3b8; }
+      .pr-section-row td { padding: 10px 0 4px; border-bottom: none; break-after: avoid; }
+      .pr-section-head {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
+        padding: 6px 10px; border-radius: 6px; background: #eef2ff; border: 1px solid #c7d2fe;
+        font-size: 0.72rem; color: #334155; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      .pr-section-head strong { font-size: 0.82rem; color: #1e3a8a; }
+      .pr-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: middle; margin-right: 6px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pr-bar { display: inline-block; width: 60%; height: 7px; border-radius: 4px; background: #e2e8f0; overflow: hidden; vertical-align: middle; margin-right: 6px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pr-bar span { display: block; height: 100%; background: #0284c7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pr-bar.done span { background: #16a34a; }
+      .pr-status { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 0.62rem; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pr-status.done { background: #dcfce7; color: #166534; }
+      .pr-status.wip { background: #e0f2fe; color: #075985; }
+      .pr-status.none { background: #f1f5f9; color: #475569; }
+      .pr-total td { font-weight: 800; border-top: 2px solid #0f172a; border-bottom: none; background: #f8fafc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pr-notes { font-size: 0.66rem; color: #475569; margin-top: 8px; line-height: 1.5; break-inside: avoid; }
+      .pr-footer { text-align: center; font-size: 0.66rem; color: #64748b; margin-top: 12px; padding-top: 6px; border-top: 1px solid #cbd5e1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-block">
+      <h1 id="chartTitle">Gantt Chart</h1>
+      <p id="chartSubtitle">Loading project data…</p>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button class="btn btn-print" id="printBtn" type="button">Print Chart</button>
+      <button class="btn" id="backButton" type="button">Back to Completed Projects</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="print-only pr-summary" id="printSummary" aria-hidden="true"></section>
+    <div class="panel">
+      <div class="loading" id="loadingState">Loading Gantt Chart data</div>
+      <div id="ganttContainer" hidden></div>
+      <p class="empty-msg" id="emptyState" hidden>No timeline data available for this project.</p>
+    </div>
+    <section class="print-only pr-details" id="printDetails" aria-hidden="true"></section>
+  </main>
+
+  <script src="state.js"></script>
+  <!-- Auth Guard -->
+  <script>
+    if (!window.ProjectData || !window.ProjectData.isAuthenticated()) {
+      window.location.href = 'login.html';
+    }
+  </script>
+  <script>
+    (function () {
+      const {
+        loadProjectState,
+        fmtDate,
+        SECTION_DEFS,
+        getEnabledSections,
+        getSectionPercent
+      } = window.ProjectData;
+
+      const SECTION_COLORS = {
+        electrical:    'bar-electrical',
+        architectural: 'bar-architectural',
+        mechanical:    'bar-mechanical',
+        plumbing:      'bar-plumbing',
+        electronics:   'bar-electronics',
+        general:       'bar-general',
+        others:        'bar-others'
+      };
+
+      const SECTION_LABELS = {
+        electrical:    'Electrical',
+        architectural: 'Architectural',
+        mechanical:    'Mechanical',
+        plumbing:      'Plumbing',
+        electronics:   'Electronics',
+        general:       'General',
+        others:        'Others'
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get('id');
+
+      if (!projectId) {
+        document.getElementById('loadingState').hidden = true;
+        document.getElementById('emptyState').hidden = false;
+        document.getElementById('emptyState').textContent = 'No project ID specified.';
+        return;
+      }
+
+      document.getElementById('backButton').addEventListener('click', () => {
+        window.location.href = 'completed_project.html';
+      });
+
+      document.getElementById('printBtn').addEventListener('click', () => {
+        window.print();
+      });
+
+      const apiFetch = async (endpoint) => {
+        const apiKey = window.ProjectData.getApiKey();
+        const token = window.ProjectData.getSessionToken ? window.ProjectData.getSessionToken() : '';
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['X-API-Key'] = apiKey;
+        if (token) {
+          headers['X-Session-Token'] = token;
+          headers['Authorization'] = 'Bearer ' + token;
+        }
+        const res = await fetch('api/' + endpoint, { headers });
+        if (!res.ok) throw new Error('API error ' + res.status);
+        return res.json();
+      };
+
+      (async function init() {
+        try {
+          // Load project state and update logs in parallel
+          const [state, logsResult] = await Promise.all([
+            loadProjectState(),
+            apiFetch('update_logs')
+          ]);
+
+          const project = state.projects[projectId];
+          if (!project) {
+            document.getElementById('loadingState').hidden = true;
+            document.getElementById('emptyState').hidden = false;
+            document.getElementById('emptyState').textContent = 'Project not found.';
+            return;
+          }
+
+          document.getElementById('chartTitle').textContent = project.title + ' — Gantt Chart';
+          document.getElementById('chartSubtitle').textContent =
+            'Full timeline from start to completion across all tracked categories.';
+
+          // Filter logs for this project
+          const logs = (logsResult.data || []).filter(
+            (log) => log.project === project.title
+          );
+
+          // Build timeline data from logs
+          const timelineData = buildTimeline(project, logs);
+
+          if (!timelineData.sections.length) {
+            document.getElementById('loadingState').hidden = true;
+            document.getElementById('emptyState').hidden = false;
+            return;
+          }
+
+          renderGantt(timelineData);
+          renderPrintReport(project, logs, timelineData);
+          document.getElementById('loadingState').hidden = true;
+          document.getElementById('ganttContainer').hidden = false;
+        } catch (err) {
+          console.error('Failed to load Gantt chart:', err);
+          document.getElementById('loadingState').hidden = true;
+          document.getElementById('emptyState').hidden = false;
+          document.getElementById('emptyState').textContent =
+            'Failed to load chart data. Please try again.';
+        }
+      })();
+
+      function buildTimeline(project, logs) {
+        const enabledKeys = getEnabledSections(project);
+        const sections = [];
+        let globalMin = Infinity;
+        let globalMax = -Infinity;
+
+        // Build a lookup: sectionKey -> itemTitle -> { start, end }
+        const logsBySection = {};
+        logs.forEach((log) => {
+          const ts = new Date(log.timestamp).getTime();
+          if (isNaN(ts)) return;
+          const sKey = (log.section || '').toLowerCase();
+          const itemTitle = log.item || '';
+          if (!sKey) return;
+          if (!logsBySection[sKey]) logsBySection[sKey] = {};
+          if (!logsBySection[sKey][itemTitle]) {
+            logsBySection[sKey][itemTitle] = { start: ts, end: ts };
+          } else {
+            logsBySection[sKey][itemTitle].start = Math.min(logsBySection[sKey][itemTitle].start, ts);
+            logsBySection[sKey][itemTitle].end = Math.max(logsBySection[sKey][itemTitle].end, ts);
+          }
+        });
+
+        // Derive project-level start/end from all logs
+        let projectStart = null;
+        let projectEnd = null;
+        logs.forEach((log) => {
+          const ts = new Date(log.timestamp).getTime();
+          if (isNaN(ts)) return;
+          if (!projectStart || ts < projectStart) projectStart = ts;
+          if (!projectEnd || ts > projectEnd) projectEnd = ts;
+        });
+
+        // Fallback: use project lastUpdate if no logs
+        if (!projectStart) {
+          const lu = new Date(project.lastUpdate).getTime();
+          projectStart = lu - 90 * 24 * 3600 * 1000; // 90 days before
+          projectEnd = lu;
+        }
+
+        enabledKeys.forEach((sKey) => {
+          const section = project.sections[sKey];
+          if (!section || !Array.isArray(section.items)) return;
+          const trackedItems = section.items.filter((item) => item.tracked !== false);
+          if (!trackedItems.length) return;
+
+          const items = trackedItems.map((item) => {
+            // Try to find log-based timeline for this item
+            const sectionLogs = logsBySection[sKey] || {};
+            let timeline = sectionLogs[item.title] || sectionLogs[item.id] || null;
+
+            // Also check general section-level logs (no specific item)
+            const sectionGeneral = sectionLogs[''];
+
+            if (!timeline) {
+              // Use section-level log range, or project-level range
+              if (sectionGeneral) {
+                timeline = { start: sectionGeneral.start, end: sectionGeneral.end };
+              } else {
+                timeline = { start: projectStart, end: projectEnd };
+              }
+            }
+
+            globalMin = Math.min(globalMin, timeline.start);
+            globalMax = Math.max(globalMax, timeline.end);
+
+            return {
+              title: item.title,
+              start: timeline.start,
+              end: timeline.end
+            };
+          });
+
+          sections.push({
+            key: sKey,
+            title: SECTION_LABELS[sKey] || section.title || sKey,
+            colorClass: SECTION_COLORS[sKey] || (SECTION_DEFS[sKey] && SECTION_DEFS[sKey].custom ? `bar-${sKey}` : 'bar-electrical'),
+            items
+          });
+        });
+
+        // Ensure minimum 1-day range
+        if (globalMax - globalMin < 86400000) {
+          globalMax = globalMin + 86400000;
+        }
+
+        return { sections, globalMin, globalMax };
+      }
+
+      function renderGantt(data) {
+        const container = document.getElementById('ganttContainer');
+        const { sections, globalMin, globalMax } = data;
+        const range = globalMax - globalMin;
+
+        // Build month markers
+        const months = buildMonthMarkers(globalMin, globalMax);
+
+        let html = '<div class="gantt-timeline-wrapper"><div class="gantt-table">';
+
+        // Timeline header
+        html += '<div class="gantt-timeline-header">';
+        html += '<div class="label-col">Sub-item</div>';
+        html += '<div class="gantt-months">';
+        months.forEach((m) => {
+          const widthPct = ((m.end - m.start) / range) * 100;
+          html += `<div class="gantt-month" style="width:${widthPct}%">${m.label}</div>`;
+        });
+        html += '</div></div>';
+
+        // Sections
+        sections.forEach((section, idx) => {
+          const sectionId = 'gantt-section-' + idx;
+          html += '<div class="gantt-section">';
+          html += `<div class="gantt-section-header" data-target="${sectionId}">`;
+          html += '<span class="arrow">&#9660;</span>';
+          html += `<span class="gantt-section-title">${escapeHtml(section.title)}</span>`;
+          html += `<span class="gantt-section-count">${section.items.length} items</span>`;
+          html += '</div>';
+
+          html += `<div class="gantt-items" id="${sectionId}">`;
+          section.items.forEach((item) => {
+            const leftPct = ((item.start - globalMin) / range) * 100;
+            const widthPct = Math.max(0.5, ((item.end - item.start) / range) * 100);
+            const startStr = formatShortDate(new Date(item.start));
+            const endStr = formatShortDate(new Date(item.end));
+
+            html += '<div class="gantt-row">';
+            html += `<div class="gantt-row-label" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>`;
+            html += '<div class="gantt-row-bar-area">';
+            html += `<div class="gantt-bar ${section.colorClass}" style="left:${leftPct}%;width:${widthPct}%">`;
+            html += `<div class="gantt-bar-tooltip">${escapeHtml(item.title)}<br>${startStr} → ${endStr}</div>`;
+            html += '</div></div></div>';
+          });
+          html += '</div></div>';
+        });
+
+        html += '</div></div>';
+
+        // Legend
+        html += '<div class="gantt-legend">';
+        sections.forEach((section) => {
+          html += `<div class="legend-item">`;
+          html += `<div class="legend-swatch ${section.colorClass}"></div>`;
+          html += `<span>${escapeHtml(section.title)}</span></div>`;
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
+
+        // Collapse/expand handlers
+        container.querySelectorAll('.gantt-section-header').forEach((header) => {
+          header.addEventListener('click', () => {
+            const targetId = header.getAttribute('data-target');
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            const isCollapsed = target.classList.contains('collapsed');
+            if (isCollapsed) {
+              target.classList.remove('collapsed');
+              header.classList.remove('collapsed');
+            } else {
+              target.classList.add('collapsed');
+              header.classList.add('collapsed');
+            }
+          });
+        });
+      }
+
+      /* ── Print report: sub-item completeness and days consumed from the actual site updates.
+         Read-only — uses the same project + update logs as the chart and leaves the chart as is. ── */
+      function renderPrintReport(project, logs, timelineData) {
+        const DAY = 86400000;
+        const startOfDay = (ts) => { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); };
+        const daysInclusive = (a, b) => Math.round((startOfDay(b) - startOfDay(a)) / DAY) + 1;
+        const norm = (v) => String(v || '').trim().toLowerCase().replace(/\s+section$/, '');
+        const pctOf = (v) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+        const esc = (v) => escapeHtml(String(v == null ? '' : v));
+        const day = (ts) => formatShortDate(new Date(ts));
+        const statusOf = (pct) => (pct >= 100 ? ['Completed', 'done'] : pct > 0 ? ['In progress', 'wip'] : ['Not started', 'none']);
+        const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+        const entries = logs
+          .map((log) => ({ ...log, ts: new Date(log.timestamp).getTime() }))
+          .filter((log) => !isNaN(log.ts));
+
+        let totalItems = 0;
+        let completedItems = 0;
+        let itemsWithUpdates = 0;
+        let progressUpdates = 0;
+
+        const sectionBlocks = timelineData.sections.map((sec) => {
+          const section = project.sections[sec.key];
+          const tracked = section.items.filter((item) => item.tracked !== false);
+          // Logs name the section by its display title ("Electrical", "Operations Section")
+          const names = new Set([sec.key, sec.title, section.title, SECTION_DEFS[sec.key] && SECTION_DEFS[sec.key].title].map(norm));
+          const sectionLogs = entries.filter((log) => names.has(norm(log.section)));
+
+          const rows = tracked.map((item) => {
+            const itemLogs = sectionLogs
+              .filter((log) => log.item === item.title || log.item === item.id)
+              .sort((a, b) => a.ts - b.ts);
+            const pct = pctOf(item.percent);
+            totalItems += 1;
+            if (pct >= 100) completedItems += 1;
+            if (itemLogs.length) itemsWithUpdates += 1;
+            progressUpdates += itemLogs.length;
+            const first = itemLogs[0];
+            const last = itemLogs[itemLogs.length - 1];
+            return {
+              title: item.title,
+              pct,
+              first: first ? first.ts : null,
+              last: last ? last.ts : null,
+              days: first ? daysInclusive(first.ts, last.ts) : null,
+              updates: itemLogs.length,
+              lastBy: last ? last.user : ''
+            };
+          });
+
+          const dated = rows.filter((r) => r.first !== null);
+          const secStart = dated.length ? Math.min(...dated.map((r) => r.first)) : null;
+          const secEnd = dated.length ? Math.max(...dated.map((r) => r.last)) : null;
+          return {
+            title: sec.title,
+            colorClass: sec.colorClass,
+            pct: getSectionPercent(section),
+            start: secStart,
+            end: secEnd,
+            days: secStart !== null ? daysInclusive(secStart, secEnd) : null,
+            updates: rows.reduce((sum, r) => sum + r.updates, 0),
+            rows
+          };
+        });
+
+        // Overall completeness: average of enabled sections (same rule as the dashboard)
+        const enabledKeys = getEnabledSections(project);
+        const overallPct = enabledKeys.length
+          ? Math.round(enabledKeys.reduce((sum, key) => sum + getSectionPercent(project.sections[key]), 0) / enabledKeys.length)
+          : 0;
+        const projStart = entries.length ? Math.min(...entries.map((l) => l.ts)) : null;
+        const projEnd = entries.length ? Math.max(...entries.map((l) => l.ts)) : null;
+        const projDays = projStart !== null ? daysInclusive(projStart, projEnd) : null;
+        const statusLabel = String(project.status || 'in_progress').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+        document.getElementById('printSummary').innerHTML = `
+          <div class="pr-kpis">
+            <div class="pr-kpi"><div class="k">Overall completeness</div><div class="v">${overallPct}%</div><div class="s">Status: ${esc(statusLabel)}</div></div>
+            <div class="pr-kpi"><div class="k">Actual period</div><div class="v">${projStart !== null ? day(projStart) : '—'}</div><div class="s">to ${projEnd !== null ? day(projEnd) : '—'}</div></div>
+            <div class="pr-kpi"><div class="k">Total days consumed</div><div class="v">${projDays !== null ? plural(projDays, 'day') : '—'}</div><div class="s">First to last site update</div></div>
+            <div class="pr-kpi"><div class="k">Sub-items completed</div><div class="v">${completedItems} / ${totalItems}</div><div class="s">${plural(progressUpdates, 'progress update')} logged</div></div>
+          </div>
+          <p class="pr-basis">Based on actual on-site updates recorded in the activity log · ${plural(timelineData.sections.length, 'section')} · Printed ${esc(fmtDate(new Date()))}</p>`;
+
+        const colgroup = `<colgroup>
+            <col style="width:4%"><col style="width:24%"><col style="width:14%"><col style="width:9%">
+            <col style="width:10%"><col style="width:10%"><col style="width:7%"><col style="width:6%"><col style="width:16%">
+          </colgroup>`;
+        const head = `<thead><tr>
+            <th>#</th><th>Sub-item</th><th>Completeness</th><th>Status</th>
+            <th>First update</th><th>Last update</th><th class="num">Days consumed</th><th class="num">Updates</th><th>Last updated by</th>
+          </tr></thead>`;
+
+        let n = 0;
+        const bodies = sectionBlocks.map((block) => {
+          const period = block.start !== null
+            ? `Actual period ${day(block.start)} → ${day(block.end)} (${plural(block.days, 'day')})`
+            : 'No site updates recorded';
+          const rows = block.rows.map((r) => {
+            n += 1;
+            const [label, cls] = statusOf(r.pct);
+            return `<tr>
+              <td class="num">${n}</td>
+              <td>${esc(r.title)}</td>
+              <td><span class="pr-bar ${cls === 'done' ? 'done' : ''}"><span style="width:${r.pct}%"></span></span><strong>${r.pct}%</strong></td>
+              <td><span class="pr-status ${cls}">${label}</span></td>
+              <td>${r.first !== null ? day(r.first) : '<span class="muted">—</span>'}</td>
+              <td>${r.last !== null ? day(r.last) : '<span class="muted">—</span>'}</td>
+              <td class="num">${r.days !== null ? r.days : '<span class="muted">—</span>'}</td>
+              <td class="num">${r.updates}</td>
+              <td>${r.lastBy ? esc(r.lastBy) : '<span class="muted">—</span>'}</td>
+            </tr>`;
+          }).join('');
+          return `<tbody>
+            <tr class="pr-section-row"><td colspan="9"><div class="pr-section-head">
+              <span><span class="pr-swatch ${block.colorClass}"></span><strong>${esc(block.title)}</strong></span>
+              <span>${plural(block.rows.length, 'sub-item')}</span>
+              <span>Section completeness <strong>${block.pct}%</strong></span>
+              <span>${period}</span>
+              <span>${plural(block.updates, 'update')}</span>
+            </div></td></tr>
+            ${rows}
+          </tbody>`;
+        }).join('');
+
+        const total = `<tbody><tr class="pr-total">
+            <td></td>
+            <td>Project total · ${plural(totalItems, 'sub-item')}</td>
+            <td>${overallPct}% overall</td>
+            <td>${completedItems} / ${totalItems}</td>
+            <td>${projStart !== null ? day(projStart) : '—'}</td>
+            <td>${projEnd !== null ? day(projEnd) : '—'}</td>
+            <td class="num">${projDays !== null ? projDays : '—'}</td>
+            <td class="num">${progressUpdates}</td>
+            <td></td>
+          </tr></tbody>`;
+
+        document.getElementById('printDetails').innerHTML = `
+          <h2>Sub-item Progress Details</h2>
+          <p class="pr-sub">${esc(project.title)} · completeness per sub-item and days consumed, based on actual site updates</p>
+          <table class="pr-table">${colgroup}${head}${bodies}${total}</table>
+          <div class="pr-notes">
+            <strong>How to read this report.</strong>
+            Completeness is the latest percentage recorded for each sub-item.
+            Days consumed counts calendar days from the first to the last recorded update of the sub-item, inclusive (a single day of updates counts as 1 day).
+            Sub-items showing “—” have no updates recorded in the activity log${totalItems - itemsWithUpdates ? ` (${totalItems - itemsWithUpdates} of ${totalItems})` : ''}; on the chart they use their section’s or the project’s update period.
+            Section completeness averages the tracked sub-items; overall completeness averages the enabled sections.
+          </div>
+          <div class="pr-footer">Generated by Project Tracker — Completed Project Gantt Chart</div>`;
+      }
+
+      function buildMonthMarkers(minTs, maxTs) {
+        const markers = [];
+        const start = new Date(minTs);
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(maxTs);
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        let current = new Date(start);
+        while (current <= end) {
+          const mStart = Math.max(current.getTime(), minTs);
+          const nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+          const mEnd = Math.min(nextMonth.getTime(), maxTs);
+          const label = monthNames[current.getMonth()] + ' ' + current.getFullYear();
+          markers.push({ start: mStart, end: mEnd, label });
+          current = nextMonth;
+        }
+        return markers;
+      }
+
+      function formatShortDate(date) {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return monthNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+.venv/
+.venv-linux/
+venv/
+env/
+
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# SQLite databases & journals
+instance/*.db
+instance/*.db-journal
+instance/*.db-wal
+instance/*.db-shm
+*.sqlite
+*.sqlite3
+
+# Tailscale local state
+tailscale-state/
+*.state
+
+# IDE & Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

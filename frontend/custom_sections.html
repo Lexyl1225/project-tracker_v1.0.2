@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+	<title>Custom Sections — Project Developments</title>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--card: #111827;
+			--muted: #94a3b8;
+			--text: #e5e7eb;
+			--accent: #38bdf8;
+			--success: #22c55e;
+			--warning: #f59e0b;
+			--danger: #ef4444;
+			--bar-bg: #1f2937;
+			--bar-fill: #60a5fa;
+			--shadow: 0 8px 24px rgba(0,0,0,0.35);
+			--radius: 14px;
+		}
+
+		* { box-sizing: border-box; }
+		[hidden] { display: none !important; }
+		body {
+			margin: 0;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+			background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+			color: var(--text);
+		}
+
+		.section-header {
+			max-width: 1120px;
+			margin: 0 auto;
+			padding: 36px 24px 12px;
+			display: flex;
+			flex-wrap: wrap;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 16px;
+		}
+		.section-header h1 {
+			margin: 4px 0;
+			font-size: 2rem;
+		}
+		.eyebrow {
+			text-transform: uppercase;
+			letter-spacing: 0.15em;
+			font-size: 0.75rem;
+			color: var(--muted);
+			margin: 0 0 6px;
+		}
+		.subtitle {
+			color: var(--muted);
+			font-size: 0.95rem;
+			margin: 0;
+		}
+
+		.toolbar.detail {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			align-items: center;
+		}
+		.pill {
+			background: #0b1325;
+			border: 1px solid #1e293b;
+			color: var(--muted);
+			padding: 8px 12px;
+			border-radius: 999px;
+			font-size: 0.9rem;
+		}
+		.btn {
+			background: var(--accent);
+			color: #062a3a;
+			border: none;
+			padding: 10px 16px;
+			border-radius: 10px;
+			font-weight: 600;
+			cursor: pointer;
+			box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.btn.secondary {
+			background: #0b1325;
+			color: var(--text);
+			border: 1px solid #1f2937;
+			box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+		}
+		.btn:active { transform: translateY(1px); }
+
+		main {
+			max-width: 1120px;
+			margin: 0 auto;
+			padding: 0 24px 60px;
+		}
+
+		.summary-panel {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+			gap: 12px;
+			margin-bottom: 24px;
+		}
+		.summary-card {
+			background: rgba(15, 23, 42, 0.7);
+			border: 1px solid #1f2937;
+			border-radius: var(--radius);
+			padding: 16px;
+			box-shadow: var(--shadow);
+			display: grid;
+			gap: 6px;
+		}
+		.summary-card .label {
+			color: var(--muted);
+			font-size: 0.85rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+		}
+		.summary-card .value {
+			font-size: 1.8rem;
+			font-weight: 700;
+			color: #93c5fd;
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: repeat(12, 1fr);
+			gap: 16px;
+		}
+		@media (max-width: 960px) {
+			.grid { grid-template-columns: repeat(6, 1fr); }
+		}
+		@media (max-width: 640px) {
+			.grid { grid-template-columns: repeat(1, 1fr); }
+		}
+
+		.card {
+			grid-column: span 6;
+			background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+			border: 1px solid #1f2937;
+			border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			padding: 18px;
+			display: grid;
+			gap: 14px;
+			position: relative;
+			overflow: hidden;
+		}
+		@media (max-width: 960px) {
+			.card { grid-column: span 6; }
+		}
+		@media (max-width: 640px) {
+			.card { grid-column: span 1; }
+		}
+
+		.card header {
+			padding: 0;
+			margin: 0;
+			display: flex; align-items: center; justify-content: space-between;
+		}
+		.title {
+			font-weight: 700; letter-spacing: 0.2px;
+		}
+		.status {
+			font-size: 0.8rem;
+			padding: 6px 10px;
+			border-radius: 999px;
+			border: 1px solid #1f2937;
+		}
+		.status.ontrack { background: rgba(34, 197, 94, 0.12); color: var(--success); }
+		.status.atrisk  { background: rgba(245, 158, 11, 0.12); color: var(--warning); }
+		.status.delayed { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+
+		.progress-wrap { display: grid; gap: 8px; }
+		.progress-bar {
+			height: 11px;
+			background: var(--bar-bg);
+			border-radius: 999px;
+			overflow: hidden;
+			border: 1px solid #1f2937;
+		}
+		.progress-fill {
+			height: 100%;
+			width: 0%;
+			border-radius: 999px;
+			background: linear-gradient(90deg, #60a5fa, #22d3ee);
+			transition: width 500ms ease;
+		}
+		.progress-value {
+			display: flex; justify-content: space-between; align-items: baseline;
+			font-size: 0.95rem;
+		}
+		.progress-value .percent { font-weight: 800; color: #93c5fd; }
+		.progress-value .label   { color: var(--muted); }
+
+		.controls {
+			display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+		}
+		.input {
+			width: 100%;
+			padding: 10px 12px;
+			background: #0b1325;
+			color: var(--text);
+			border: 1px solid #1f2937;
+			border-radius: 10px;
+			outline: none;
+		}
+		.footnote { color: var(--muted); font-size: 0.85rem; }
+
+		.card::after {
+			content: "";
+			position: absolute; inset: -80px -80px auto auto;
+			width: 220px; height: 220px;
+			background: radial-gradient(120px 120px at 50% 50%, rgba(56,189,248,0.18), transparent 70%);
+			transform: rotate(15deg);
+			pointer-events: none;
+		}
+        .manager-controls {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #1f2937;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.manager-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.manager-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  margin: 12px 0 0;
+}
+.track-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+	margin-bottom: 10px;
+}
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.chip-accent {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+.chip-muted {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+}
+.btn.ghost {
+  background: transparent;
+  border: 1px dashed #1f2937;
+  color: var(--text);
+  box-shadow: none;
+}
+
+/* ---- Add / Delete Sub-item Modals ---- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 500;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+.modal-box {
+  background: var(--card);
+  border: 1px solid #1f2937;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  display: grid;
+  gap: 16px;
+}
+.modal-box h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.modal-field {
+  display: grid;
+  gap: 6px;
+}
+.modal-field label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.modal-field input,
+.modal-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: #0b1325;
+  color: var(--text);
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+.modal-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.delete-list {
+  max-height: 280px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+}
+.delete-list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color 0.15s;
+}
+.delete-list label:hover {
+  border-color: var(--danger);
+}
+.delete-list input[type="radio"] {
+  accent-color: var(--danger);
+  width: 16px;
+  height: 16px;
+}
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+}
+
+@media print {
+  @page { margin: 0; }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    padding: 12mm 10mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body > header,
+  header.section-header,
+  .section-header,
+  .btn {
+    display: none !important;
+  }
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+	
+/* ---- Custom Sections page ---- */
+.panel-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  margin-top: 14px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+.form-field { display: grid; gap: 6px; }
+.form-field label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.form-field textarea.input { resize: vertical; min-height: 70px; font-family: inherit; }
+.form-field .hint { color: var(--muted); font-size: 0.8rem; margin: 0; }
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.form-error { color: var(--danger); font-size: 0.85rem; margin: 0; min-height: 1em; }
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 28px 0 12px;
+}
+.section-heading h2 { margin: 0; font-size: 1.15rem; }
+.section-heading span { color: var(--muted); font-size: 0.85rem; }
+.card-title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.card-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.card-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.card .meta { display: grid; gap: 4px; color: var(--muted); font-size: 0.85rem; }
+.card .meta strong { color: var(--text); font-weight: 600; }
+.card .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.card .actions .btn { font-size: 0.875rem; font-family: inherit; }
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.chip-accent { background: rgba(34, 197, 94, 0.12); color: var(--success); }
+.chip-muted { background: rgba(148, 163, 184, 0.12); color: var(--muted); }
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 28px 16px;
+  border: 1px dashed #1f2937;
+  border-radius: var(--radius);
+}
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.card .actions .btn.danger { margin-left: auto; }
+.modal-error { color: var(--danger); font-size: 0.85rem; margin: 0; min-height: 1em; }
+.admin-note {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px; padding: 10px 12px; color: var(--muted); font-size: 0.85rem; margin: 0;
+}
+.admin-note strong { color: var(--text); }
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #0b1325; border: 1px solid #1f2937; color: var(--text);
+  padding: 10px 18px; border-radius: 10px; box-shadow: var(--shadow);
+  opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 600; pointer-events: none;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
+	</style>
+</head>
+<body>
+	<header class="section-header">
+		<div>
+			<p class="eyebrow" id="projectName">Project Developments</p>
+			<h1>Custom Sections</h1>
+			<p class="subtitle">Create your own sections, such as <em>Operations</em> or <em>Mechanical Section no.2</em>, and track them just like Electrical, Mechanical and the other built-in sections.</p>
+		</div>
+		<div class="toolbar detail">
+			<a class="btn secondary" href="user_index.html">Back to Dashboard</a>
+		</div>
+	</header>
+
+	<main>
+		<section class="manager-controls">
+			<h2 class="panel-title">Create a custom section</h2>
+			<p class="manager-hint">The new section gets its own page, dashboard card and Gantt chart colour.</p>
+			<form id="createForm" novalidate>
+				<div class="form-grid">
+					<div class="form-field">
+						<label for="csTitle">Section name *</label>
+						<input class="input" id="csTitle" maxlength="60" placeholder="e.g. Operations" autocomplete="off" required />
+					</div>
+					<div class="form-field">
+						<label for="csLead">Lead / Team</label>
+						<input class="input" id="csLead" maxlength="100" placeholder="e.g. Ops-Team" autocomplete="off" />
+					</div>
+					<div class="form-field full">
+						<label for="csScope">Scope</label>
+						<input class="input" id="csScope" maxlength="300" placeholder="e.g. Facility operations, handover and maintenance" autocomplete="off" />
+					</div>
+					<div class="form-field full">
+						<label for="csSummary">Summary</label>
+						<textarea class="input" id="csSummary" maxlength="500" placeholder="Short description shown on the dashboard card."></textarea>
+					</div>
+					<div class="form-field full">
+						<label for="csItems">Initial sub-items</label>
+						<textarea class="input" id="csItems" placeholder="One sub-item per line, e.g.&#10;Daily Site Inspection&#10;Equipment Handover&#10;Preventive Maintenance Plan"></textarea>
+						<p class="hint">Optional. You can add or delete sub-items later on the section page.</p>
+					</div>
+				</div>
+				<div class="form-actions">
+					<label class="toggle">
+						<input type="checkbox" id="csAddToProject" checked />
+						<span>Add to the active project (<span id="activeProjectLabel">—</span>)</span>
+					</label>
+					<button class="btn" type="submit" id="csCreateBtn">+ Create Section</button>
+				</div>
+				<p class="form-error" id="csError" role="alert"></p>
+			</form>
+		</section>
+
+		<div class="section-heading">
+			<h2>Your custom sections</h2>
+			<span id="customCount">0 sections</span>
+		</div>
+		<p class="empty-state" id="customEmpty" hidden>No custom sections yet. Create one above.</p>
+		<section class="grid" id="customGrid"></section>
+	</main>
+
+	<!-- Delete Custom Section (administrator approval) -->
+	<div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+		<form class="modal-box" id="deleteForm" novalidate>
+			<h2 id="deleteModalTitle">Delete Custom Section</h2>
+			<p class="admin-note">
+				<span aria-hidden="true">⚠</span>
+				<span>This permanently removes <strong id="deleteName"></strong> and its sub-item progress from <strong id="deleteProjects">every project</strong>. Saved Gantt schedules keep their existing rows.</span>
+			</p>
+			<p class="manager-hint">Administrator approval is required. Enter an admin account's username and password.</p>
+			<div class="modal-field">
+				<label for="adminUsername">Admin username</label>
+				<input type="text" id="adminUsername" autocomplete="username" />
+			</div>
+			<div class="modal-field">
+				<label for="adminPassword">Admin password</label>
+				<input type="password" id="adminPassword" autocomplete="current-password" />
+			</div>
+			<p class="modal-error" id="deleteError" role="alert"></p>
+			<div class="modal-actions">
+				<button class="btn secondary" type="button" id="deleteCancel">Cancel</button>
+				<button class="btn danger" type="submit" id="deleteConfirm">Delete Section</button>
+			</div>
+		</form>
+	</div>
+
+	<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+	<script src="state.js"></script>
+	<!-- Auth Guard -->
+	<script>
+		if (!window.ProjectData || !window.ProjectData.isAuthenticated()) {
+			window.location.href = 'login.html';
+		}
+	</script>
+	<script>
+		(function () {
+			const {
+				SECTION_DEFS,
+				loadProjectState,
+				persistProjectState,
+				getActiveProject,
+				touchProject,
+				getSectionPercent,
+				listCustomSections,
+				createCustomSection,
+				setSectionEnabledForProject,
+				getSectionDisplayName,
+				deleteCustomSection,
+				getCurrentUser,
+				isAdmin,
+				appendUpdateLog,
+				getActiveUserName
+			} = window.ProjectData;
+
+			const $ = (id) => document.getElementById(id);
+			let state = null;
+			let project = null;
+
+			let toastTimer = null;
+			const showToast = (message, type = 'success') => {
+				const toast = $('toast');
+				toast.textContent = message;
+				toast.className = `toast ${type} visible`;
+				clearTimeout(toastTimer);
+				toastTimer = setTimeout(() => toast.classList.remove('visible'), 3200);
+			};
+
+			const isInProject = (key) => Boolean(project && project.enabledSections
+				&& project.enabledSections[key] === true && project.sections[key]);
+
+			const renderList = () => {
+				const grid = $('customGrid');
+				const sections = listCustomSections();
+				$('customCount').textContent = `${sections.length} section${sections.length === 1 ? '' : 's'}`;
+				$('customEmpty').hidden = sections.length > 0;
+				grid.innerHTML = '';
+				sections.forEach((def) => {
+					const inProject = isInProject(def.key);
+					const pct = inProject ? getSectionPercent(project.sections[def.key]) : null;
+					const card = document.createElement('article');
+					card.className = 'card';
+					card.innerHTML = `
+						<header>
+							<div class="card-title-wrap">
+								<div class="card-icon card-icon--${def.key}" aria-hidden="true">
+									<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 3h3v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>
+								</div>
+								<div class="title"></div>
+							</div>
+							<span class="chip ${inProject ? 'chip-accent' : 'chip-muted'}">${inProject ? `In project · ${pct}%` : 'Not in project'}</span>
+						</header>
+						<div class="meta">
+							<span>Lead: <strong data-f="lead"></strong></span>
+							<span>Scope: <strong data-f="scope"></strong></span>
+							<span>Default sub-items: <strong>${def.items.length}</strong></span>
+						</div>
+						<div class="footnote" data-f="summary"></div>
+						<div class="actions">
+							<a class="btn" href="${def.file}">Open Section</a>
+							<button class="btn secondary" type="button" data-toggle="${def.key}">${inProject ? 'Remove from project' : '+ Add to project'}</button>
+							<button class="btn danger" type="button" data-delete="${def.key}">Delete</button>
+						</div>`;
+					// user-entered text goes in via textContent
+					card.querySelector('.title').textContent = getSectionDisplayName(def.key);
+					card.querySelector('[data-f="lead"]').textContent = def.lead || '—';
+					card.querySelector('[data-f="scope"]').textContent = def.scope || '—';
+					card.querySelector('[data-f="summary"]').textContent = def.summary || '';
+					grid.appendChild(card);
+				});
+			};
+
+			const toggleInProject = async (key) => {
+				if (!project) { return; }
+				const name = getSectionDisplayName(key);
+				if (isInProject(key)) {
+					if (!window.confirm(`Remove "${name}" from "${project.title}"? Its sub-item progress in this project will be cleared.`)) { return; }
+					setSectionEnabledForProject(project, key, false);
+					showToast(`Removed "${name}" from ${project.title}.`);
+				} else {
+					setSectionEnabledForProject(project, key, true);
+					showToast(`Added "${name}" to ${project.title}.`);
+				}
+				touchProject(project);
+				await persistProjectState(state);
+				renderList();
+			};
+
+			/* ── Delete (requires an administrator's username + password) ── */
+			let pendingDeleteKey = null;
+			const deleteModal = $('deleteModal');
+			const openDeleteModal = (key) => {
+				pendingDeleteKey = key;
+				$('deleteName').textContent = getSectionDisplayName(key);
+				$('deleteError').textContent = '';
+				$('adminPassword').value = '';
+				const user = getCurrentUser ? getCurrentUser() : null;
+				$('adminUsername').value = (isAdmin && isAdmin() && user && user.username) ? user.username : '';
+				$('deleteConfirm').disabled = false;
+				deleteModal.classList.add('active');
+				($('adminUsername').value ? $('adminPassword') : $('adminUsername')).focus();
+			};
+			const closeDeleteModal = () => {
+				deleteModal.classList.remove('active');
+				$('adminPassword').value = '';
+				pendingDeleteKey = null;
+			};
+			$('deleteCancel').addEventListener('click', closeDeleteModal);
+			deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) closeDeleteModal(); });
+			document.addEventListener('keydown', (e) => {
+				if (e.key === 'Escape' && deleteModal.classList.contains('active')) closeDeleteModal();
+			});
+			$('deleteForm').addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const key = pendingDeleteKey;
+				if (!key) { return; }
+				const adminUsername = $('adminUsername').value.trim();
+				const adminPassword = $('adminPassword').value;
+				if (!adminUsername || !adminPassword) {
+					$('deleteError').textContent = 'Enter the administrator username and password.';
+					return;
+				}
+				const name = getSectionDisplayName(key);
+				$('deleteConfirm').disabled = true;
+				try {
+					await deleteCustomSection(key, { adminUsername, adminPassword });
+				} catch (error) {
+					$('deleteError').textContent = error.message || 'Could not delete the section.';
+					$('adminPassword').value = '';
+					$('adminPassword').focus();
+					$('deleteConfirm').disabled = false;
+					return;
+				}
+				closeDeleteModal();
+				// The server removed it from every project; reload so this page's copy matches
+				state = await loadProjectState();
+				project = getActiveProject(state);
+				showToast(`Custom section "${name}" deleted.`);
+				renderList();
+			});
+
+			$('customGrid').addEventListener('click', (event) => {
+				const btn = event.target.closest('[data-toggle]');
+				if (btn) { toggleInProject(btn.getAttribute('data-toggle')); return; }
+				const del = event.target.closest('[data-delete]');
+				if (del) { openDeleteModal(del.getAttribute('data-delete')); }
+			});
+
+			$('createForm').addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const errorEl = $('csError');
+				errorEl.textContent = '';
+				const title = $('csTitle').value.trim();
+				if (!title) {
+					errorEl.textContent = 'Please enter a section name.';
+					$('csTitle').focus();
+					return;
+				}
+				const items = $('csItems').value.split('\n').map((line) => line.trim()).filter(Boolean);
+				const btn = $('csCreateBtn');
+				btn.disabled = true;
+				let created;
+				try {
+					created = await createCustomSection({
+						title,
+						lead: $('csLead').value.trim(),
+						scope: $('csScope').value.trim(),
+						summary: $('csSummary').value.trim(),
+						items
+					});
+				} catch (error) {
+					errorEl.textContent = error.message || 'Could not create the section.';
+					btn.disabled = false;
+					return;
+				}
+				btn.disabled = false;
+				if (created && $('csAddToProject').checked && project && SECTION_DEFS[created.key]) {
+					setSectionEnabledForProject(project, created.key, true);
+					touchProject(project);
+					await persistProjectState(state);
+				}
+				appendUpdateLog({
+					user: getActiveUserName(),
+					project: project ? project.title : 'Project Developments',
+					section: created ? created.title : title,
+					item: 'Custom section created'
+				});
+				$('createForm').reset();
+				$('csAddToProject').checked = true;
+				showToast(`Custom section "${created ? created.title : title}" created.`);
+				renderList();
+			});
+
+			(async function init() {
+				state = await loadProjectState();
+				project = getActiveProject(state);
+				$('projectName').textContent = project ? project.title : 'No active project';
+				$('activeProjectLabel').textContent = project ? project.title : 'none';
+				if (!project) { $('csAddToProject').checked = false; $('csAddToProject').disabled = true; }
+				if (new URLSearchParams(window.location.search).get('deleted')) {
+					showToast('Custom section deleted.');
+				}
+				renderList();
+			})();
+		})();
+	</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+# Virtual environments
+.venv/
+.venv-linux/
+venv/
+env/
+
+# Python cache & build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local SQLite database & runtime state (mounted via volume at runtime)
+instance/*.db
+instance/*.db-journal
+instance/*.db-wal
+instance/*.db-shm
+
+# Tailscale state
+tailscale-state/
+
+# Git & IDE files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md

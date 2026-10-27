@@ -1,0 +1,38 @@
+services:
+  project-tracker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: project-tracker:latest
+    container_name: project-tracker
+    hostname: project-tracker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+      - TS_HOSTNAME=project-tracker
+      - TS_TAILNET=ratfish-regulus.ts.net
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_AUTHKEY=${TS_AUTHKEY:-}
+      - TS_EXTRA_ARGS=${TS_EXTRA_ARGS:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist SQLite database (instance/rest_api.db)
+      - ./instance:/app/instance
+      # Persist dynamic sub-item template updates in frontend/state.js
+      - ./frontend:/app/frontend
+      # Persist .env file so API_KEY remains consistent across restarts
+      - ./.env:/app/.env
+      # Persist Tailscale node identity, machine key, and TLS certificates
+      - tailscale-state:/var/lib/tailscale
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+volumes:
+  tailscale-state:
+    name: project-tracker-tailscale-state

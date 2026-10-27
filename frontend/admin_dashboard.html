@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+  <title>Admin Console & User Management — Project Tracker</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --surface: #0f172a;
+      --card: #111827;
+      --card-hover: #1e293b;
+      --border: #1e293b;
+      --border-strong: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0284c7;
+      --indigo: #818cf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 16px;
+      --shadow: 0 18px 45px rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1400px 700px at 15% 0%, #0f172a 0%, var(--bg) 65%);
+      color: var(--text);
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 49px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: rgba(15, 23, 42, 0.85);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px;
+    }
+
+    .sidebar-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      color: #082f49;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar-nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .nav-btn:hover {
+      background: rgba(30, 41, 59, 0.65);
+      color: var(--text);
+    }
+
+    .nav-btn.active {
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--accent);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      gap: 8px;
+    }
+
+    /* Main Content */
+    .main-area {
+      padding: 28px 32px 64px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+    }
+
+    .page-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.8));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    .kpi-value {
+      font-size: 1.95rem;
+      font-weight: 800;
+      margin: 6px 0 4px;
+      color: var(--text);
+    }
+
+    .kpi-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    /* Panel & Toolbar */
+    .panel {
+      background: rgba(17, 24, 39, 0.88);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .search-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .input, .select {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: #0b1222;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .input {
+      min-width: 240px;
+      flex: 1;
+      max-width: 380px;
+    }
+
+    .input:focus, .select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text);
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+      color: #082f49;
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    .btn.primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn.danger {
+      border-color: rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+    }
+
+    .btn.danger:hover {
+      background: rgba(239, 68, 68, 0.24);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: none;
+    }
+
+    .btn.sm {
+      padding: 6px 11px;
+      font-size: 0.78rem;
+    }
+
+    /* Data Table */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.65);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(30, 41, 59, 0.35); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-admin {
+      background: rgba(56, 189, 248, 0.16);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .badge-regular {
+      background: rgba(129, 140, 248, 0.16);
+      color: #a5b4fc;
+      border: 1px solid rgba(129, 140, 248, 0.4);
+    }
+
+    .badge-active {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+
+    /* Site settings */
+    .setting-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(11, 18, 34, 0.6);
+    }
+    @media (max-width: 720px) {
+      .setting-row { grid-template-columns: 1fr; }
+    }
+    .setting-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-weight: 700;
+      font-size: 1.02rem;
+      margin: 0 0 6px;
+    }
+    .setting-desc { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 640px; }
+    .setting-meta { margin-top: 10px; font-size: 0.8rem; color: var(--muted); }
+    .setting-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      user-select: none;
+    }
+    .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .switch-track {
+      width: 52px; height: 30px;
+      border-radius: 999px;
+      background: #334155;
+      border: 1px solid var(--border-strong);
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .switch-track::after {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #f8fafc;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s;
+    }
+    .switch input:checked + .switch-track { background: var(--success); border-color: rgba(34, 197, 94, 0.6); }
+    .switch input:checked + .switch-track::after { transform: translateX(22px); }
+    .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35); }
+    .switch input:disabled + .switch-track { opacity: 0.5; }
+
+    /* API keys */
+    .key-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .key-stat {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(11, 18, 34, 0.6);
+    }
+    .key-stat-label { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    .key-stat-value { font-size: 1.5rem; font-weight: 800; margin-top: 4px; }
+    .master-key {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(129, 140, 248, 0.1), rgba(56, 189, 248, 0.05));
+    }
+    .master-key-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      background: rgba(129, 140, 248, 0.18);
+      border: 1px solid rgba(129, 140, 248, 0.4);
+    }
+    .master-key-title { font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .master-key-desc { margin: 4px 0 0; color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+    .key-mono {
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      background: #0b1222;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px 8px;
+      white-space: nowrap;
+    }
+    .key-name { font-weight: 700; margin-bottom: 6px; }
+    .key-sub { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+    .badge-full { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-read { background: rgba(129, 140, 248, 0.16); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.4); }
+    .badge-expired { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.35); }
+    tr.key-inactive td:not(:last-child) { opacity: 0.6; }
+    .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .choice {
+      position: relative;
+      display: block;
+      padding: 12px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      background: #0b1222;
+      cursor: pointer;
+    }
+    .choice input { position: absolute; opacity: 0; }
+    .choice strong { display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 3px; }
+    .choice span { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+    .choice:has(input:checked) { border-color: var(--accent); background: rgba(56, 189, 248, 0.1); }
+    .choice:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35); }
+    .secret-box {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      padding: 6px;
+      border: 1px solid rgba(34, 197, 94, 0.45);
+      border-radius: 12px;
+      background: rgba(34, 197, 94, 0.08);
+    }
+    .secret-box code {
+      flex: 1;
+      min-width: 0;
+      padding: 8px 10px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.86rem;
+      color: #bbf7d0;
+      word-break: break-all;
+      user-select: all;
+    }
+    .notice {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fde68a;
+    }
+    .notice.danger { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.35); color: #fecaca; }
+    .snippet-label { font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin: 14px 0 6px; }
+    .snippet {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1222;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.76rem;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .modal-card.wide { max-width: 600px; }
+    @media (max-width: 720px) {
+      .key-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .master-key { grid-template-columns: 1fr; }
+      .choice-grid { grid-template-columns: 1fr; }
+    }
+
+    .badge-deleted {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .status-not_started { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.35); }
+    .status-in_progress { background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .status-on_hold { background: rgba(245, 158, 11, 0.16); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .status-completed { background: rgba(34, 197, 94, 0.16); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .row-actions {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9995;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid var(--border-strong);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-field label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: #0b1222;
+      color: var(--text);
+      font-size: 0.92rem;
+      font-family: inherit;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-checkboxes {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1222;
+    }
+
+    .section-checkboxes label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    @media (max-width: 960px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+      }
+      .sidebar-nav {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+      .main-area {
+        padding: 20px 16px 48px;
+      }
+    }
+
+    @media print {
+      @page { margin: 0; }
+      body {
+        background: #fff !important;
+        color: #0f172a !important;
+        padding: 12mm 10mm !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #agyRbacTopbar,
+      #agyChangePwdModal,
+      #agyToastContainer,
+      .no-print,
+      header.page-header,
+      .page-header,
+      .sidebar,
+      .toolbar,
+      .modal-backdrop,
+      .toast-container,
+      .btn {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+      }
+      .app-layout {
+        display: block !important;
+      }
+      .main-area {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .kpi-card, .panel {
+        background: #fff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+      }
+      th, td { color: #0f172a !important; border-color: #e2e8f0 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">🛡️</div>
+        <div>
+          <div style="font-weight: 800; font-size: 1rem;">Admin Console</div>
+          <div style="font-size: 0.78rem; color: var(--muted);" id="sidebarRoleLabel">RBAC Control Center</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Admin console sections">
+        <button type="button" class="nav-btn active" data-tab="users">
+          <span>👥</span> <span>User Management</span>
+        </button>
+        <button type="button" class="nav-btn" data-tab="projects">
+          <span>📁</span> <span>Project Management</span>
+        </button>
+        <button type="button" class="nav-btn" data-tab="audit">
+          <span>📜</span> <span>Security & Audit Logs</span>
+        </button>
+        <button type="button" class="nav-btn" data-tab="apikeys">
+          <span>🔐</span> <span>API Keys</span>
+        </button>
+        <button type="button" class="nav-btn" data-tab="settings">
+          <span>⚙️</span> <span>Site Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a class="nav-btn" href="user_index.html">📊 Section Progress View</a>
+        <a class="nav-btn" href="gantt_chart_creator.html">📅 Interactive Gantt Studio</a>
+        <button type="button" class="nav-btn" id="sidebarChangePwdBtn">🔑 Change My Password</button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-area">
+      <header class="page-header">
+        <div>
+          <h1 id="pageHeading">User Account & Role Management</h1>
+          <p id="pageSubheading">Create, search, filter, edit, reset passwords, and manage Admin & Regular user permissions.</p>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn" id="headerChangePwdBtn">🔑 Change Own Password</button>
+          <button type="button" class="btn primary" id="openCreateUserBtn">+ Create New User</button>
+          <button type="button" class="btn primary" id="openCreateProjectBtn" style="display:none;">+ Create New Project</button>
+          <button type="button" class="btn primary" id="openCreateKeyBtn" style="display:none;">+ Generate API Key</button>
+        </div>
+      </header>
+
+      <!-- KPI Summary Strip -->
+      <section class="kpi-grid" aria-label="System Metrics">
+        <div class="kpi-card">
+          <div class="kpi-label">Active Accounts</div>
+          <div class="kpi-value" id="kpiActiveUsers">0</div>
+          <div class="kpi-sub" id="kpiTotalUsersSub">0 total registered</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Role Breakdown</div>
+          <div class="kpi-value" id="kpiAdminsCount">0 Admins</div>
+          <div class="kpi-sub" id="kpiRegularCountSub">0 Regular Users</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Tracked Projects</div>
+          <div class="kpi-value" id="kpiProjectsCount">0</div>
+          <div class="kpi-sub" id="kpiCompletedProjectsSub">0 Completed</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Soft-Deleted / Deactivated</div>
+          <div class="kpi-value" id="kpiDeletedUsers">0</div>
+          <div class="kpi-sub">Restorable or permanently removable</div>
+        </div>
+      </section>
+
+      <!-- TAB 1: USER MANAGEMENT -->
+      <section class="panel" id="tab-users">
+        <div class="toolbar">
+          <div class="search-group">
+            <input type="search" class="input" id="userSearchInput" placeholder="Search by username, full name, or email..." />
+            <select class="select" id="userRoleFilter" aria-label="Filter by role">
+              <option value="all">All Roles</option>
+              <option value="admin">Admin Only</option>
+              <option value="regular">Regular User Only</option>
+            </select>
+            <select class="select" id="userStatusFilter" aria-label="Filter by status">
+              <option value="active">Active Users</option>
+              <option value="inactive">Deactivated Users</option>
+              <option value="deleted">Soft-Deleted Users</option>
+              <option value="all">All Users</option>
+            </select>
+          </div>
+          <button type="button" class="btn" id="refreshUsersBtn">↻ Refresh</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User Account</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Last Login</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="usersEmptyState" hidden>No user accounts match the current search and filter criteria.</div>
+      </section>
+
+      <!-- TAB 2: PROJECT MANAGEMENT -->
+      <section class="panel" id="tab-projects" hidden>
+        <div class="toolbar">
+          <div class="search-group">
+            <input type="search" class="input" id="projectSearchInput" placeholder="Search projects by title, description, or author..." />
+            <select class="select" id="projectStatusFilter" aria-label="Filter projects by status">
+              <option value="all">All Statuses</option>
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="on_hold">On Hold</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <button type="button" class="btn primary" id="toolbarCreateProjectBtn">+ New Project</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Project Title & Description</th>
+                <th>Status</th>
+                <th>Completion</th>
+                <th>Enabled Sections</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="projectsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="projectsEmptyState" hidden>No projects match the selected filters.</div>
+      </section>
+
+      <!-- TAB 3: AUDIT LOGS -->
+      <section class="panel" id="tab-audit" hidden>
+        <div class="toolbar">
+          <div class="search-group">
+            <input type="search" class="input" id="auditSearchInput" placeholder="Search audit trail by actor, action, or target..." />
+            <select class="select" id="auditTypeFilter" aria-label="Filter audit logs by target">
+              <option value="all">All Categories</option>
+              <option value="user">User & Password Actions</option>
+              <option value="project">Project Actions</option>
+              <option value="gantt_schedule">Gantt Chart Actions</option>
+              <option value="setting">Site Settings</option>
+              <option value="api_key">API Keys</option>
+            </select>
+          </div>
+          <button type="button" class="btn" id="refreshAuditBtn">↻ Refresh Logs</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="auditEmptyState" hidden>No audit events recorded yet.</div>
+      </section>
+
+      <!-- TAB 4: API KEYS -->
+      <section class="panel" id="tab-apikeys" hidden>
+        <div class="key-stats" aria-label="API key summary">
+          <div class="key-stat"><div class="key-stat-label">Active keys</div><div class="key-stat-value" id="keyStatActive">0</div></div>
+          <div class="key-stat"><div class="key-stat-label">Used in last 7 days</div><div class="key-stat-value" id="keyStatUsed">0</div></div>
+          <div class="key-stat"><div class="key-stat-label">Revoked</div><div class="key-stat-value" id="keyStatRevoked">0</div></div>
+          <div class="key-stat"><div class="key-stat-label">Expired</div><div class="key-stat-value" id="keyStatExpired">0</div></div>
+        </div>
+
+        <div class="master-key">
+          <div class="master-key-icon" aria-hidden="true">🗝️</div>
+          <div>
+            <div class="master-key-title">
+              Master key <code style="font-size:0.8rem;color:var(--muted);">.env → API_KEY</code>
+              <span class="badge" id="envKeyBadge">—</span>
+            </div>
+            <p class="master-key-desc">
+              The server's built-in key with full access, read from <code>.env</code>. Rotating it generates a new key with
+              <code>api_key_generator.py</code> and immediately stops the old one from working.
+            </p>
+            <div style="margin-top:8px;"><span class="key-mono" id="envKeyPreview">Loading…</span></div>
+          </div>
+          <button type="button" class="btn" id="rotateEnvKeyBtn">↻ Rotate master key</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-group">
+            <input type="search" class="input" id="keySearchInput" placeholder="Search keys by name, creator, or prefix..." />
+            <select class="select" id="keyStatusFilter" aria-label="Filter keys by status">
+              <option value="all">All Keys</option>
+              <option value="active">Active</option>
+              <option value="revoked">Revoked</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+          <button type="button" class="btn" id="refreshKeysBtn">↻ Refresh</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Access</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th>Expires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="keysTableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="keysEmptyState" hidden>
+          <div id="keysEmptyText">No API keys yet. Generate one to give a script or integration its own revocable access.</div>
+          <button type="button" class="btn primary" id="emptyCreateKeyBtn" style="margin-top:14px;">+ Generate API Key</button>
+        </div>
+      </section>
+
+      <!-- TAB 5: SITE SETTINGS -->
+      <section class="panel" id="tab-settings" hidden>
+        <div class="setting-row">
+          <div>
+            <p class="setting-title">
+              Public Homepage <code style="font-size:0.8rem;color:var(--muted);">index.html</code>
+              <span class="badge" id="homepageBadge">—</span>
+            </p>
+            <p class="setting-desc">
+              When <strong>shown</strong>, anyone can open the homepage and see live project progress without signing in.
+              When <strong>hidden</strong>, visitors are taken to a sign-in notice and then redirected to the login page;
+              signed-in users are sent to their dashboard instead.
+            </p>
+            <div class="setting-meta" id="homepageMeta">Loading…</div>
+            <div class="setting-links">
+              <a class="btn sm" href="index.html" target="_blank" rel="noopener">Open homepage ↗</a>
+              <a class="btn sm" href="homepage_unavailable.html?preview=1" target="_blank" rel="noopener">Preview redirect page ↗</a>
+            </div>
+          </div>
+          <label class="switch" for="homepageToggle">
+            <input type="checkbox" id="homepageToggle" role="switch" disabled />
+            <span class="switch-track" aria-hidden="true"></span>
+            <span id="homepageToggleLabel">Show homepage</span>
+          </label>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL 1: CREATE / EDIT USER -->
+  <div class="modal-backdrop" id="userModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="userModalTitle">Create New User</h3>
+        <button type="button" class="modal-close" data-close="userModal">&times;</button>
+      </div>
+      <form id="userForm" class="form-grid" autocomplete="off">
+        <input type="hidden" id="editUserId" />
+        <div class="form-field">
+          <label for="formUsername">Username *</label>
+          <input type="text" id="formUsername" required placeholder="e.g. jsmith" />
+        </div>
+        <div class="form-field">
+          <label for="formFullName">Full Name *</label>
+          <input type="text" id="formFullName" required placeholder="e.g. Jordan Smith" />
+        </div>
+        <div class="form-field">
+          <label for="formEmail">Email Address</label>
+          <input type="email" id="formEmail" placeholder="jordan@example.com" />
+        </div>
+        <div class="form-field">
+          <label for="formRole">Assigned Role *</label>
+          <select id="formRole" required>
+            <option value="regular">Regular User (Projects & Gantt Management)</option>
+            <option value="admin">Administrator (Full User, Password & Project Control)</option>
+          </select>
+        </div>
+        <div class="form-field" id="passwordFieldWrap">
+          <label for="formPassword">Initial Password * (min. 6 characters)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="formPassword" placeholder="Enter or generate password" />
+            <button type="button" class="btn sm" id="genCreatePwdBtn">Generate</button>
+          </div>
+        </div>
+        <div class="form-field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="formIsActive" checked style="width:auto;" />
+            <span>Account is Active (allowed to sign in)</span>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-close="userModal">Cancel</button>
+          <button type="submit" class="btn primary" id="saveUserBtn">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: ADMIN RESET USER PASSWORD -->
+  <div class="modal-backdrop" id="resetPwdModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Reset User Password</h3>
+        <button type="button" class="modal-close" data-close="resetPwdModal">&times;</button>
+      </div>
+      <p style="margin:0 0 14px;color:var(--muted);font-size:0.9rem;">
+        Set a new password for <strong style="color:var(--text);" id="resetPwdTargetName">@user</strong>. All active sessions for this user will be signed out.
+      </p>
+      <form id="resetPwdForm" class="form-grid">
+        <input type="hidden" id="resetPwdUserId" />
+        <div class="form-field">
+          <label for="resetNewPassword">New Password *</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="resetNewPassword" required minlength="6" placeholder="Enter new password" />
+            <button type="button" class="btn sm" id="genResetPwdBtn">Generate</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-close="resetPwdModal">Cancel</button>
+          <button type="submit" class="btn primary">Confirm Password Reset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: DELETE USER CONFIRMATION (SOFT vs PERMANENT) -->
+  <div class="modal-backdrop" id="deleteUserModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Delete User Account</h3>
+        <button type="button" class="modal-close" data-close="deleteUserModal">&times;</button>
+      </div>
+      <p style="margin:0 0 16px;color:var(--muted);font-size:0.92rem;">
+        Choose how to remove <strong style="color:var(--text);" id="deleteUserTargetName">@user</strong>:
+      </p>
+      <input type="hidden" id="deleteUserId" />
+      <div style="display:grid;gap:10px;">
+        <button type="button" class="btn" id="confirmSoftDeleteBtn" style="justify-content:flex-start;padding:12px 16px;border-radius:12px;">
+          <span>🗃️</span>
+          <div style="text-align:left;">
+            <div style="font-weight:700;color:var(--text);">Soft Delete (Recommended)</div>
+            <div style="font-size:0.78rem;color:var(--muted);">Deactivates sign-in and hides user while keeping audit history intact.</div>
+          </div>
+        </button>
+        <button type="button" class="btn danger" id="confirmPermanentDeleteBtn" style="justify-content:flex-start;padding:12px 16px;border-radius:12px;">
+          <span>⚠️</span>
+          <div style="text-align:left;">
+            <div style="font-weight:700;">Permanent Delete</div>
+            <div style="font-size:0.78rem;color:#fecaca;">Irreversibly erases this user account from the SQLite database.</div>
+          </div>
+        </button>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close="deleteUserModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: CREATE / EDIT PROJECT -->
+  <div class="modal-backdrop" id="projectModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="projectModalTitle">Create New Project</h3>
+        <button type="button" class="modal-close" data-close="projectModal">&times;</button>
+      </div>
+      <form id="projectForm" class="form-grid">
+        <input type="hidden" id="editProjectId" />
+        <div class="form-field">
+          <label for="projTitleInput">Project Title *</label>
+          <input type="text" id="projTitleInput" required placeholder="e.g. Tower B MEP Modernization" />
+        </div>
+        <div class="form-field">
+          <label for="projDescInput">Description</label>
+          <textarea id="projDescInput" rows="2" placeholder="Scope summary, client, or milestone notes..."></textarea>
+        </div>
+        <div class="form-field">
+          <label for="projStatusInput">Project Status *</label>
+          <select id="projStatusInput" required>
+            <option value="not_started">Not Started</option>
+            <option value="in_progress" selected>In Progress</option>
+            <option value="on_hold">On Hold</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Enabled Disciplines / Sections</label>
+          <div class="section-checkboxes" id="projSectionsCheckboxes">
+            <label><input type="checkbox" value="electrical" checked /> Electrical</label>
+            <label><input type="checkbox" value="architectural" checked /> Architectural</label>
+            <label><input type="checkbox" value="mechanical" checked /> Mechanical</label>
+            <label><input type="checkbox" value="plumbing" checked /> Plumbing</label>
+            <label><input type="checkbox" value="electronics" checked /> Electronics</label>
+            <label><input type="checkbox" value="general" checked /> General</label>
+            <label><input type="checkbox" value="others" checked /> Others</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-close="projectModal">Cancel</button>
+          <button type="submit" class="btn primary">Save Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: GENERATE API KEY -->
+  <div class="modal-backdrop" id="createKeyModal" role="dialog" aria-modal="true" aria-labelledby="createKeyTitle">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3 id="createKeyTitle">Generate API Key</h3>
+        <button type="button" class="modal-close" data-close="createKeyModal">&times;</button>
+      </div>
+      <form id="createKeyForm" class="form-grid" autocomplete="off">
+        <div class="form-field">
+          <label for="keyNameInput">Key name *</label>
+          <input type="text" id="keyNameInput" required maxlength="100" placeholder="e.g. PowerShell reports, Site tablet sync" />
+        </div>
+        <div class="form-field">
+          <label>Access level *</label>
+          <div class="choice-grid">
+            <label class="choice">
+              <input type="radio" name="keyAccess" value="read" checked />
+              <strong>Read-only</strong>
+              <span>GET requests only. Good for reports, dashboards and exports.</span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="keyAccess" value="full" />
+              <strong>Full access</strong>
+              <span>Read and write: create, update and delete data, like the master key.</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="keyExpiryInput">Expiration</label>
+          <select id="keyExpiryInput">
+            <option value="30">30 days</option>
+            <option value="90" selected>90 days</option>
+            <option value="180">180 days</option>
+            <option value="365">1 year</option>
+            <option value="0">Never expires</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-close="createKeyModal">Cancel</button>
+          <button type="submit" class="btn primary" id="createKeySubmit">Generate Key</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 6: SHOW NEW KEY ONCE -->
+  <div class="modal-backdrop" id="newKeyModal" role="dialog" aria-modal="true" aria-labelledby="newKeyTitle" data-locked="true">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3 id="newKeyTitle">Copy your new API key</h3>
+      </div>
+      <div class="notice" style="margin-bottom:14px;">
+        <span aria-hidden="true">⚠️</span>
+        <span id="newKeyNotice">This is the only time the full key is shown. Store it somewhere safe, such as a password manager. If you lose it, generate a new key and delete this one.</span>
+      </div>
+      <div class="secret-box">
+        <code id="newKeyValue"></code>
+        <button type="button" class="btn primary sm" id="copyNewKeyBtn">Copy</button>
+      </div>
+      <div class="snippet-label">PowerShell</div>
+      <pre class="snippet" id="snippetPs"></pre>
+      <div class="snippet-label">curl</div>
+      <pre class="snippet" id="snippetCurl"></pre>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:16px;font-size:0.88rem;cursor:pointer;">
+        <input type="checkbox" id="newKeySavedCheck" />
+        <span>I have copied and stored this key</span>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn primary" id="newKeyDoneBtn" disabled>Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 7: DELETE API KEY -->
+  <div class="modal-backdrop" id="deleteKeyModal" role="dialog" aria-modal="true" aria-labelledby="deleteKeyTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="deleteKeyTitle">Delete API Key</h3>
+        <button type="button" class="modal-close" data-close="deleteKeyModal">&times;</button>
+      </div>
+      <p style="margin:0 0 12px;color:var(--muted);font-size:0.92rem;">
+        Permanently delete <strong style="color:var(--text);" id="deleteKeyName">key</strong>
+        <span class="key-mono" id="deleteKeyPreview"></span>?
+      </p>
+      <div class="notice danger">
+        <span aria-hidden="true">⛔</span>
+        <span>Any script or integration still using this key will immediately get <strong>401 Unauthorized</strong>. This cannot be undone. To pause access instead, revoke the key.</span>
+      </div>
+      <input type="hidden" id="deleteKeyId" />
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close="deleteKeyModal">Cancel</button>
+        <button type="button" class="btn danger" id="confirmDeleteKeyBtn">Delete permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 8: ROTATE MASTER KEY -->
+  <div class="modal-backdrop" id="rotateKeyModal" role="dialog" aria-modal="true" aria-labelledby="rotateKeyTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="rotateKeyTitle">Rotate master key</h3>
+        <button type="button" class="modal-close" data-close="rotateKeyModal">&times;</button>
+      </div>
+      <div class="notice danger" style="margin-bottom:14px;">
+        <span aria-hidden="true">⚠️</span>
+        <span>A new <code>API_KEY</code> is written to <code>.env</code> and the current one stops working at once. Scripts that read the key from <code>.env</code> pick up the new one automatically; anything with the old key pasted in must be updated.</span>
+      </div>
+      <form id="rotateKeyForm" class="form-grid" autocomplete="off">
+        <div class="form-field">
+          <label for="rotateAdminUser">Administrator username *</label>
+          <input type="text" id="rotateAdminUser" required autocomplete="off" />
+        </div>
+        <div class="form-field">
+          <label for="rotateAdminPwd">Administrator password *</label>
+          <input type="password" id="rotateAdminPwd" required autocomplete="new-password" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-close="rotateKeyModal">Cancel</button>
+          <button type="submit" class="btn danger" id="rotateKeySubmit">Rotate key</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="state.js"></script>
+  <script>
+    (function () {
+      const {
+        isAuthenticated,
+        isAdmin,
+        apiFetch,
+        showToast,
+        openChangePasswordModal,
+        fmtDate,
+      } = window.ProjectData;
+
+      if (!isAuthenticated()) {
+        window.location.href = 'login.html?redirect=' + encodeURIComponent('admin_dashboard.html');
+        return;
+      }
+
+      if (!isAdmin()) {
+        alert('Access Denied: Administrator privileges are required to view the Admin Console.');
+        window.location.href = 'user_index.html';
+        return;
+      }
+
+      const escapeHtml = (str = '') =>
+        String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c));
+
+      const randomStrongPassword = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+        let out = '';
+        for (let i = 0; i < 12; i++) {
+          out += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return out;
+      };
+
+      const STATUS_LABELS = {
+        not_started: 'Not Started',
+        in_progress: 'In Progress',
+        on_hold: 'On Hold',
+        completed: 'Completed',
+      };
+
+      let usersCache = [];
+      let projectsCache = [];
+
+      // Tab Switching
+      const tabButtons = document.querySelectorAll('[data-tab]');
+      const tabPanels = {
+        users: document.getElementById('tab-users'),
+        projects: document.getElementById('tab-projects'),
+        audit: document.getElementById('tab-audit'),
+        apikeys: document.getElementById('tab-apikeys'),
+        settings: document.getElementById('tab-settings'),
+      };
+
+      const switchTab = (tabKey) => {
+        tabButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabKey));
+        Object.entries(tabPanels).forEach(([k, el]) => {
+          if (el) el.hidden = k !== tabKey;
+        });
+        document.getElementById('openCreateUserBtn').style.display = tabKey === 'users' ? 'inline-flex' : 'none';
+        document.getElementById('openCreateProjectBtn').style.display = tabKey === 'projects' ? 'inline-flex' : 'none';
+        document.getElementById('openCreateKeyBtn').style.display = tabKey === 'apikeys' ? 'inline-flex' : 'none';
+
+        if (tabKey === 'users') {
+          document.getElementById('pageHeading').textContent = 'User Account & Role Management';
+          document.getElementById('pageSubheading').textContent = 'Create, search, filter, edit, reset passwords, and manage Admin & Regular user permissions.';
+          loadUsers();
+        } else if (tabKey === 'projects') {
+          document.getElementById('pageHeading').textContent = 'Project Portfolio & Status Management';
+          document.getElementById('pageSubheading').textContent = 'Create, edit, update status, and launch interactive Gantt charts for all projects.';
+          loadProjects();
+        } else if (tabKey === 'audit') {
+          document.getElementById('pageHeading').textContent = 'Security & Activity Audit Trail';
+          document.getElementById('pageSubheading').textContent = 'Track every user account change, password reset, project modification, and Gantt schedule update.';
+          loadAuditLogs();
+        } else if (tabKey === 'apikeys') {
+          document.getElementById('pageHeading').textContent = 'API Key Management';
+          document.getElementById('pageSubheading').textContent = 'Generate, revoke and delete keys for scripts and integrations that call the REST API.';
+          loadApiKeys();
+        } else if (tabKey === 'settings') {
+          document.getElementById('pageHeading').textContent = 'Site Settings';
+          document.getElementById('pageSubheading').textContent = 'Control what visitors see before signing in.';
+          loadHomepageSetting();
+        }
+      };
+
+      // Site Settings: public homepage visibility
+      const homepageToggle = document.getElementById('homepageToggle');
+      const renderHomepageSetting = (setting) => {
+        const visible = setting.visible !== false;
+        homepageToggle.checked = visible;
+        homepageToggle.disabled = false;
+        homepageToggle.setAttribute('aria-checked', String(visible));
+        document.getElementById('homepageToggleLabel').textContent = visible ? 'Shown' : 'Hidden';
+        const badge = document.getElementById('homepageBadge');
+        badge.className = `badge ${visible ? 'badge-active' : 'badge-deleted'}`;
+        badge.textContent = visible ? 'Visible to public' : 'Hidden — redirects to login';
+        document.getElementById('homepageMeta').textContent = setting.updatedAt
+          ? `Last changed by ${setting.updatedBy || 'an administrator'} on ${fmtDate(new Date(setting.updatedAt))}`
+          : 'Default setting (never changed).';
+      };
+      async function loadHomepageSetting() {
+        try {
+          renderHomepageSetting(await apiFetch('settings/homepage'));
+        } catch (err) {
+          document.getElementById('homepageMeta').textContent = 'Could not load this setting: ' + (err.message || 'unknown error');
+        }
+      }
+      homepageToggle.addEventListener('change', async () => {
+        const visible = homepageToggle.checked;
+        if (!visible && !window.confirm('Hide the public homepage? Visitors will be redirected to the login page.')) {
+          homepageToggle.checked = true;
+          return;
+        }
+        homepageToggle.disabled = true;
+        try {
+          const res = await apiFetch('settings/homepage', { method: 'PUT', body: JSON.stringify({ visible }) });
+          renderHomepageSetting(res);
+          showToast(res.message || 'Setting saved.', 'success');
+        } catch (err) {
+          homepageToggle.checked = !visible;
+          homepageToggle.disabled = false;
+          showToast(err.message || 'Failed to update the homepage setting.', 'error');
+        }
+      });
+
+      // API Keys
+      let keysCache = [];
+      const ACCESS_LABELS = { full: 'Full access', read: 'Read-only' };
+      const KEY_STATUS_BADGES = { active: 'badge-active', revoked: 'badge-deleted', expired: 'badge-expired' };
+      const fmtKeyDate = (iso) => (iso ? fmtDate(new Date(iso)) : '—');
+      const relativeTime = (iso) => {
+        if (!iso) return 'Never used';
+        const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return `${mins} min ago`;
+        const hours = Math.round(mins / 60);
+        if (hours < 24) return `${hours} hr ago`;
+        const days = Math.round(hours / 24);
+        return days < 30 ? `${days} day${days === 1 ? '' : 's'} ago` : fmtKeyDate(iso);
+      };
+      const expiryLabel = (k) => {
+        if (!k.expiresAt) return 'Never';
+        const days = Math.ceil((new Date(k.expiresAt).getTime() - Date.now()) / 86400000);
+        if (days <= 0) return `Expired ${fmtKeyDate(k.expiresAt)}`;
+        return `${fmtKeyDate(k.expiresAt)}<div class="key-sub"${days <= 7 ? ' style="color:#fbbf24;"' : ''}>in ${days} day${days === 1 ? '' : 's'}</div>`;
+      };
+
+      const renderApiKeys = (res) => {
+        keysCache = res.keys || [];
+        const stats = res.stats || {};
+        document.getElementById('keyStatActive').textContent = stats.active ?? 0;
+        document.getElementById('keyStatUsed').textContent = stats.usedLast7Days ?? 0;
+        document.getElementById('keyStatRevoked').textContent = stats.revoked ?? 0;
+        document.getElementById('keyStatExpired').textContent = stats.expired ?? 0;
+
+        const env = res.envKey || {};
+        const envBadge = document.getElementById('envKeyBadge');
+        envBadge.className = `badge ${env.configured ? 'badge-active' : 'badge-deleted'}`;
+        envBadge.textContent = env.configured ? 'Configured' : 'Not set';
+        document.getElementById('envKeyPreview').textContent = env.configured ? env.preview : 'No API_KEY in .env (the API is open to unauthenticated requests)';
+        document.getElementById('rotateEnvKeyBtn').textContent = env.configured ? '↻ Rotate master key' : '+ Generate master key';
+        renderKeysTable();
+      };
+
+      const renderKeysTable = () => {
+        const search = document.getElementById('keySearchInput').value.trim().toLowerCase();
+        const status = document.getElementById('keyStatusFilter').value;
+        const rows = keysCache.filter((k) => (status === 'all' || k.status === status)
+          && (!search || [k.name, k.createdBy, k.preview].some((v) => String(v || '').toLowerCase().includes(search))));
+        const tbody = document.getElementById('keysTableBody');
+        const empty = document.getElementById('keysEmptyState');
+        if (!rows.length) {
+          tbody.innerHTML = '';
+          empty.hidden = false;
+          document.getElementById('keysEmptyText').textContent = keysCache.length
+            ? 'No API keys match the current search and filter.'
+            : 'No API keys yet. Generate one to give a script or integration its own revocable access.';
+          document.getElementById('emptyCreateKeyBtn').hidden = keysCache.length > 0;
+          return;
+        }
+        empty.hidden = true;
+        tbody.innerHTML = rows.map((k) => {
+          const statusText = k.status === 'revoked' ? 'Revoked' : k.status === 'expired' ? 'Expired' : 'Active';
+          const statusSub = k.status === 'revoked' && k.revokedAt
+            ? `<div class="key-sub">by ${escapeHtml(k.revokedBy || 'admin')}, ${fmtKeyDate(k.revokedAt)}</div>` : '';
+          const toggle = k.status === 'revoked'
+            ? `<button type="button" class="btn sm" data-key-action="restore" data-key-id="${k.id}">Restore</button>`
+            : `<button type="button" class="btn sm" data-key-action="revoke" data-key-id="${k.id}"${k.status === 'expired' ? ' disabled' : ''}>Revoke</button>`;
+          return `
+            <tr class="${k.status === 'active' ? '' : 'key-inactive'}">
+              <td>
+                <div class="key-name">${escapeHtml(k.name)}</div>
+                <span class="key-mono">${escapeHtml(k.preview)}</span>
+              </td>
+              <td><span class="badge badge-${k.access === 'read' ? 'read' : 'full'}">${ACCESS_LABELS[k.access] || k.access}</span></td>
+              <td><span class="badge ${KEY_STATUS_BADGES[k.status] || ''}">${statusText}</span>${statusSub}</td>
+              <td>${fmtKeyDate(k.createdAt)}<div class="key-sub">by ${escapeHtml(k.createdBy || '—')}</div></td>
+              <td>${relativeTime(k.lastUsedAt)}${k.lastUsedIp ? `<div class="key-sub">from ${escapeHtml(k.lastUsedIp)}</div>` : ''}</td>
+              <td>${expiryLabel(k)}</td>
+              <td><div class="row-actions">${toggle}<button type="button" class="btn sm danger" data-key-action="delete" data-key-id="${k.id}">Delete</button></div></td>
+            </tr>`;
+        }).join('');
+      };
+
+      async function loadApiKeys() {
+        try {
+          renderApiKeys(await apiFetch('admin/api_keys'));
+        } catch (err) {
+          showToast(err.message || 'Failed to load API keys', 'error');
+        }
+      }
+
+      const openCreateKeyModal = () => {
+        document.getElementById('createKeyForm').reset();
+        openModal('createKeyModal');
+        setTimeout(() => document.getElementById('keyNameInput').focus(), 50);
+      };
+      document.getElementById('openCreateKeyBtn').addEventListener('click', openCreateKeyModal);
+      document.getElementById('emptyCreateKeyBtn').addEventListener('click', openCreateKeyModal);
+      document.getElementById('refreshKeysBtn').addEventListener('click', loadApiKeys);
+      document.getElementById('keySearchInput').addEventListener('input', renderKeysTable);
+      document.getElementById('keyStatusFilter').addEventListener('change', renderKeysTable);
+
+      const showNewKey = (key, title, notice) => {
+        const origin = window.location.origin;
+        document.getElementById('newKeyTitle').textContent = title;
+        if (notice) document.getElementById('newKeyNotice').textContent = notice;
+        document.getElementById('newKeyValue').textContent = key;
+        document.getElementById('snippetPs').textContent =
+          `Invoke-RestMethod -Uri "${origin}/api/users" -Headers @{ "X-API-Key" = "${key}" }`;
+        document.getElementById('snippetCurl').textContent =
+          `curl -H "X-API-Key: ${key}" ${origin}/api/users`;
+        document.getElementById('newKeySavedCheck').checked = false;
+        document.getElementById('newKeyDoneBtn').disabled = true;
+        document.getElementById('copyNewKeyBtn').textContent = 'Copy';
+        openModal('newKeyModal');
+      };
+      document.getElementById('copyNewKeyBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('copyNewKeyBtn');
+        const value = document.getElementById('newKeyValue').textContent;
+        try {
+          await navigator.clipboard.writeText(value);
+        } catch (e) {
+          const range = document.createRange();
+          range.selectNodeContents(document.getElementById('newKeyValue'));
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          document.execCommand('copy');
+        }
+        btn.textContent = 'Copied ✓';
+        document.getElementById('newKeySavedCheck').checked = true;
+        document.getElementById('newKeyDoneBtn').disabled = false;
+      });
+      document.getElementById('newKeySavedCheck').addEventListener('change', (e) => {
+        document.getElementById('newKeyDoneBtn').disabled = !e.target.checked;
+      });
+      document.getElementById('newKeyDoneBtn').addEventListener('click', () => {
+        document.getElementById('newKeyValue').textContent = '';
+        document.getElementById('snippetPs').textContent = '';
+        document.getElementById('snippetCurl').textContent = '';
+        closeModal('newKeyModal');
+      });
+
+      document.getElementById('createKeyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submit = document.getElementById('createKeySubmit');
+        submit.disabled = true;
+        try {
+          const res = await apiFetch('admin/api_keys', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: document.getElementById('keyNameInput').value.trim(),
+              access: document.querySelector('input[name="keyAccess"]:checked').value,
+              expiresInDays: Number(document.getElementById('keyExpiryInput').value),
+            }),
+          });
+          closeModal('createKeyModal');
+          renderApiKeys(res);
+          showNewKey(res.key, `Copy your new API key: ${res.apiKey ? res.apiKey.name : ''}`,
+            'This is the only time the full key is shown. Store it somewhere safe, such as a password manager. If you lose it, generate a new key and delete this one.');
+        } catch (err) {
+          showToast(err.message || 'Failed to generate API key', 'error');
+        } finally {
+          submit.disabled = false;
+        }
+      });
+
+      document.getElementById('keysTableBody').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-key-action]');
+        if (!btn) return;
+        const key = keysCache.find((k) => String(k.id) === btn.dataset.keyId);
+        if (!key) return;
+        const action = btn.dataset.keyAction;
+        if (action === 'delete') {
+          document.getElementById('deleteKeyId').value = key.id;
+          document.getElementById('deleteKeyName').textContent = key.name;
+          document.getElementById('deleteKeyPreview').textContent = key.preview;
+          openModal('deleteKeyModal');
+          return;
+        }
+        if (action === 'revoke' && !window.confirm(`Revoke "${key.name}"? Requests using it will be rejected until you restore it.`)) return;
+        btn.disabled = true;
+        try {
+          const res = await apiFetch(`admin/api_keys/${key.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ revoked: action === 'revoke' }),
+          });
+          renderApiKeys(res);
+          showToast(res.message, 'success');
+        } catch (err) {
+          btn.disabled = false;
+          showToast(err.message || 'Failed to update API key', 'error');
+        }
+      });
+
+      document.getElementById('confirmDeleteKeyBtn').addEventListener('click', async () => {
+        const id = document.getElementById('deleteKeyId').value;
+        const btn = document.getElementById('confirmDeleteKeyBtn');
+        btn.disabled = true;
+        try {
+          const res = await apiFetch(`admin/api_keys/${id}`, { method: 'DELETE' });
+          closeModal('deleteKeyModal');
+          renderApiKeys(res);
+          showToast(res.message, 'success');
+        } catch (err) {
+          showToast(err.message || 'Failed to delete API key', 'error');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      document.getElementById('rotateEnvKeyBtn').addEventListener('click', () => {
+        document.getElementById('rotateKeyForm').reset();
+        const me = window.ProjectData.getCurrentUser();
+        if (me && me.username) document.getElementById('rotateAdminUser').value = me.username;
+        openModal('rotateKeyModal');
+        setTimeout(() => document.getElementById('rotateAdminPwd').focus(), 50);
+      });
+      document.getElementById('rotateKeyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submit = document.getElementById('rotateKeySubmit');
+        submit.disabled = true;
+        try {
+          const res = await apiFetch('admin/api_keys/rotate_env', {
+            method: 'POST',
+            body: JSON.stringify({
+              adminUsername: document.getElementById('rotateAdminUser').value.trim(),
+              adminPassword: document.getElementById('rotateAdminPwd').value,
+            }),
+          });
+          closeModal('rotateKeyModal');
+          renderApiKeys(res);
+          showNewKey(res.key, 'New master key saved to .env',
+            'The old master key no longer works. The new key has been written to .env; copy it now if you use it outside this server.');
+        } catch (err) {
+          showToast(err.message || 'Failed to rotate the master key', 'error');
+        } finally {
+          document.getElementById('rotateAdminPwd').value = '';
+          submit.disabled = false;
+        }
+      });
+
+      tabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      // Modal Helpers
+      const openModal = (id) => document.getElementById(id)?.classList.add('open');
+      const closeModal = (id) => document.getElementById(id)?.classList.remove('open');
+
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.close));
+      });
+      document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
+        backdrop.addEventListener('click', (e) => {
+          if (e.target === backdrop && !backdrop.dataset.locked) backdrop.classList.remove('open');
+        });
+      });
+
+      // Self-Service Password Change
+      document.getElementById('sidebarChangePwdBtn')?.addEventListener('click', openChangePasswordModal);
+      document.getElementById('headerChangePwdBtn')?.addEventListener('click', openChangePasswordModal);
+
+      // ──────────────────────────────────────────────────
+      // 1. USER MANAGEMENT
+      // ──────────────────────────────────────────────────
+      const loadUsers = async () => {
+        const search = document.getElementById('userSearchInput').value.trim();
+        const role = document.getElementById('userRoleFilter').value;
+        const status = document.getElementById('userStatusFilter').value;
+
+        try {
+          const qs = new URLSearchParams({ search, role, status }).toString();
+          const res = await apiFetch(`admin/users?${qs}`);
+          usersCache = res.users || [];
+          const stats = res.stats || {};
+
+          document.getElementById('kpiActiveUsers').textContent = stats.active ?? usersCache.length;
+          document.getElementById('kpiTotalUsersSub').textContent = `${stats.total ?? 0} total active/inactive`;
+          document.getElementById('kpiAdminsCount').textContent = `${stats.admins ?? 0} Admins`;
+          document.getElementById('kpiRegularCountSub').textContent = `${stats.regular ?? 0} Regular Users`;
+          document.getElementById('kpiDeletedUsers').textContent = stats.deleted ?? 0;
+
+          renderUsersTable();
+        } catch (err) {
+          showToast(err.message || 'Failed to load users', 'error');
+        }
+      };
+
+      const renderUsersTable = () => {
+        const tbody = document.getElementById('usersTableBody');
+        const empty = document.getElementById('usersEmptyState');
+        if (!usersCache.length) {
+          tbody.innerHTML = '';
+          empty.hidden = false;
+          return;
+        }
+        empty.hidden = true;
+        tbody.innerHTML = usersCache
+          .map((u) => {
+            const initials = (u.fullName || u.username || 'U')
+              .trim()
+              .split(/\s+/)
+              .map((w) => w[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase();
+            const isRoleAdmin = u.role === 'admin';
+            const statusBadge = u.isDeleted
+              ? '<span class="badge badge-deleted">Soft-Deleted</span>'
+              : u.isActive
+              ? '<span class="badge badge-active">Active</span>'
+              : '<span class="badge status-on_hold">Deactivated</span>';
+
+            return `
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar">${escapeHtml(initials)}</div>
+                    <div>
+                      <div style="font-weight:700;color:var(--text);">${escapeHtml(u.fullName || u.username)}</div>
+                      <div style="font-size:0.8rem;color:var(--muted);">@${escapeHtml(u.username)} ${u.email ? '· ' + escapeHtml(u.email) : ''}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge ${isRoleAdmin ? 'badge-admin' : 'badge-regular'}">
+                    ${isRoleAdmin ? '🛡️ Admin' : '👷 Regular'}
+                  </span>
+                </td>
+                <td>${statusBadge}</td>
+                <td style="color:var(--muted);font-size:0.84rem;">${u.lastLoginAt ? fmtDate(new Date(u.lastLoginAt)) : 'Never'}</td>
+                <td style="color:var(--muted);font-size:0.84rem;">${u.createdAt ? fmtDate(new Date(u.createdAt)) : '—'}</td>
+                <td>
+                  <div class="row-actions">
+                    <button type="button" class="btn sm" data-edit-user="${u.id}">✏️ Edit</button>
+                    <button type="button" class="btn sm" data-reset-pwd="${u.id}">🔑 Reset Password</button>
+                    ${
+                      u.isDeleted
+                        ? `<button type="button" class="btn sm primary" data-restore-user="${u.id}">♻️ Restore</button>`
+                        : ''
+                    }
+                    <button type="button" class="btn sm danger" data-delete-user="${u.id}">🗑️ Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+      };
+
+      document.getElementById('userSearchInput').addEventListener('input', loadUsers);
+      document.getElementById('userRoleFilter').addEventListener('change', loadUsers);
+      document.getElementById('userStatusFilter').addEventListener('change', loadUsers);
+      document.getElementById('refreshUsersBtn').addEventListener('click', loadUsers);
+
+      // Open Create User Modal
+      document.getElementById('openCreateUserBtn').addEventListener('click', () => {
+        document.getElementById('userModalTitle').textContent = 'Create New User Account';
+        document.getElementById('editUserId').value = '';
+        document.getElementById('userForm').reset();
+        document.getElementById('passwordFieldWrap').style.display = 'grid';
+        document.getElementById('formPassword').required = true;
+        document.getElementById('formIsActive').checked = true;
+        openModal('userModal');
+      });
+
+      document.getElementById('genCreatePwdBtn').addEventListener('click', () => {
+        document.getElementById('formPassword').value = randomStrongPassword();
+      });
+
+      document.getElementById('genResetPwdBtn').addEventListener('click', () => {
+        document.getElementById('resetNewPassword').value = randomStrongPassword();
+      });
+
+      // User Table Delegation (Edit, Reset Password, Restore, Delete)
+      document.getElementById('usersTableBody').addEventListener('click', async (e) => {
+        const editBtn = e.target.closest('[data-edit-user]');
+        if (editBtn) {
+          const uid = Number(editBtn.dataset.editUser);
+          const user = usersCache.find((x) => x.id === uid);
+          if (!user) return;
+          document.getElementById('userModalTitle').textContent = `Edit User @${user.username}`;
+          document.getElementById('editUserId').value = String(user.id);
+          document.getElementById('formUsername').value = user.username;
+          document.getElementById('formFullName').value = user.fullName || '';
+          document.getElementById('formEmail').value = user.email || '';
+          document.getElementById('formRole').value = user.role || 'regular';
+          document.getElementById('formIsActive').checked = Boolean(user.isActive);
+          document.getElementById('passwordFieldWrap').style.display = 'none';
+          document.getElementById('formPassword').required = false;
+          openModal('userModal');
+          return;
+        }
+
+        const resetBtn = e.target.closest('[data-reset-pwd]');
+        if (resetBtn) {
+          const uid = Number(resetBtn.dataset.resetPwd);
+          const user = usersCache.find((x) => x.id === uid);
+          if (!user) return;
+          document.getElementById('resetPwdUserId').value = String(user.id);
+          document.getElementById('resetPwdTargetName').textContent = `${user.fullName || user.username} (@${user.username})`;
+          document.getElementById('resetNewPassword').value = '';
+          openModal('resetPwdModal');
+          return;
+        }
+
+        const restoreBtn = e.target.closest('[data-restore-user]');
+        if (restoreBtn) {
+          const uid = Number(restoreBtn.dataset.restoreUser);
+          try {
+            await apiFetch(`admin/users/${uid}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ restore: true }),
+            });
+            showToast('User account restored!', 'success');
+            loadUsers();
+          } catch (err) {
+            showToast(err.message || 'Restore failed', 'error');
+          }
+          return;
+        }
+
+        const delBtn = e.target.closest('[data-delete-user]');
+        if (delBtn) {
+          const uid = Number(delBtn.dataset.deleteUser);
+          const user = usersCache.find((x) => x.id === uid);
+          if (!user) return;
+          document.getElementById('deleteUserId').value = String(user.id);
+          document.getElementById('deleteUserTargetName').textContent = `${user.fullName || user.username} (@${user.username})`;
+          openModal('deleteUserModal');
+        }
+      });
+
+      // Submit Create / Edit User
+      document.getElementById('userForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('editUserId').value;
+        const payload = {
+          username: document.getElementById('formUsername').value.trim(),
+          fullName: document.getElementById('formFullName').value.trim(),
+          email: document.getElementById('formEmail').value.trim(),
+          role: document.getElementById('formRole').value,
+          isActive: document.getElementById('formIsActive').checked,
+        };
+
+        try {
+          if (editId) {
+            await apiFetch(`admin/users/${editId}`, {
+              method: 'PUT',
+              body: JSON.stringify(payload),
+            });
+            showToast(`User @${payload.username} updated successfully.`, 'success');
+          } else {
+            payload.password = document.getElementById('formPassword').value;
+            await apiFetch('admin/users', {
+              method: 'POST',
+              body: JSON.stringify(payload),
+            });
+            showToast(`User @${payload.username} created successfully.`, 'success');
+          }
+          closeModal('userModal');
+          loadUsers();
+        } catch (err) {
+          showToast(err.message || 'Failed to save user', 'error');
+        }
+      });
+
+      // Submit Admin Password Reset
+      document.getElementById('resetPwdForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const uid = document.getElementById('resetPwdUserId').value;
+        const newPassword = document.getElementById('resetNewPassword').value;
+        try {
+          const res = await apiFetch(`admin/users/${uid}/reset-password`, {
+            method: 'POST',
+            body: JSON.stringify({ newPassword }),
+          });
+          closeModal('resetPwdModal');
+          showToast(res.message || 'Password reset successfully.', 'success');
+        } catch (err) {
+          showToast(err.message || 'Password reset failed', 'error');
+        }
+      });
+
+      // Confirm Soft or Permanent Delete User
+      const executeUserDelete = async (mode) => {
+        const uid = document.getElementById('deleteUserId').value;
+        if (!uid) return;
+        try {
+          const res = await apiFetch(`admin/users/${uid}?mode=${mode}`, {
+            method: 'DELETE',
+          });
+          closeModal('deleteUserModal');
+          showToast(res.message || 'User deleted.', 'success');
+          loadUsers();
+        } catch (err) {
+          showToast(err.message || 'Delete failed', 'error');
+        }
+      };
+
+      document.getElementById('confirmSoftDeleteBtn').addEventListener('click', () => executeUserDelete('soft'));
+      document.getElementById('confirmPermanentDeleteBtn').addEventListener('click', () => executeUserDelete('permanent'));
+
+      // ──────────────────────────────────────────────────
+      // 2. PROJECT MANAGEMENT
+      // ──────────────────────────────────────────────────
+      const loadProjects = async () => {
+        const search = document.getElementById('projectSearchInput').value.trim();
+        const status = document.getElementById('projectStatusFilter').value;
+        try {
+          const qs = new URLSearchParams({ search, status }).toString();
+          const res = await apiFetch(`projects?${qs}`);
+          projectsCache = res.projects || [];
+
+          document.getElementById('kpiProjectsCount').textContent = projectsCache.length;
+          const completedCount = projectsCache.filter((p) => p.status === 'completed' || p.overallPercent >= 100).length;
+          document.getElementById('kpiCompletedProjectsSub').textContent = `${completedCount} Completed`;
+
+          renderProjectsTable();
+        } catch (err) {
+          showToast(err.message || 'Failed to load projects', 'error');
+        }
+      };
+
+      const renderProjectsTable = () => {
+        const tbody = document.getElementById('projectsTableBody');
+        const empty = document.getElementById('projectsEmptyState');
+        if (!projectsCache.length) {
+          tbody.innerHTML = '';
+          empty.hidden = false;
+          return;
+        }
+        empty.hidden = true;
+        tbody.innerHTML = projectsCache
+          .map((p) => {
+            const st = p.status || 'in_progress';
+            const enabledList = Object.entries(p.enabledSections || {})
+              .filter(([, v]) => v !== false)
+              .map(([k]) => k);
+
+            return `
+              <tr>
+                <td>
+                  <div style="font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;">
+                    <span>${escapeHtml(p.title)}</span>
+                    ${p.isActive ? '<span class="badge badge-admin">Active</span>' : ''}
+                  </div>
+                  <div style="font-size:0.82rem;color:var(--muted);margin-top:3px;">
+                    ${escapeHtml(p.description || 'No description provided')}
+                  </div>
+                </td>
+                <td>
+                  <select class="select" data-proj-status="${escapeHtml(p.id)}" style="padding:6px 10px;font-size:0.8rem;">
+                    <option value="not_started" ${st === 'not_started' ? 'selected' : ''}>Not Started</option>
+                    <option value="in_progress" ${st === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="on_hold" ${st === 'on_hold' ? 'selected' : ''}>On Hold</option>
+                    <option value="completed" ${st === 'completed' ? 'selected' : ''}>Completed</option>
+                  </select>
+                </td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:90px;height:8px;background:#1e293b;border-radius:999px;overflow:hidden;">
+                      <div style="width:${p.overallPercent || 0}%;height:100%;background:linear-gradient(90deg,#38bdf8,#22c55e);"></div>
+                    </div>
+                    <span style="font-weight:700;font-size:0.84rem;">${p.overallPercent || 0}%</span>
+                  </div>
+                </td>
+                <td style="font-size:0.8rem;color:var(--muted);">
+                  ${enabledList.length} sections
+                </td>
+                <td style="font-size:0.82rem;color:var(--muted);">
+                  ${p.lastUpdate ? fmtDate(new Date(p.lastUpdate)) : '—'}<br/>
+                  <span style="font-size:0.75rem;">by ${escapeHtml(p.lastUpdatedBy || 'System')}</span>
+                </td>
+                <td style="white-space:nowrap;">
+                  <div class="row-actions">
+                    <button type="button" class="btn sm" data-edit-proj="${escapeHtml(p.id)}">✏️ Edit</button>
+                    <a class="btn sm" href="gantt_chart_creator.html?project_id=${encodeURIComponent(p.id)}">📅 Gantt</a>
+                    <button type="button" class="btn sm danger" data-del-proj="${escapeHtml(p.id)}">🗑️ Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+      };
+
+      document.getElementById('projectSearchInput').addEventListener('input', loadProjects);
+      document.getElementById('projectStatusFilter').addEventListener('change', loadProjects);
+
+      // Custom sections get a checkbox too (off by default, like on the dashboards)
+      const renderCustomSectionCheckboxes = async () => {
+        if (!window.ProjectData || !window.ProjectData.loadCustomSections) return;
+        const box = document.getElementById('projSectionsCheckboxes');
+        const list = await window.ProjectData.loadCustomSections();
+        box.querySelectorAll('[data-custom-check]').forEach((el) => el.remove());
+        list.forEach((def) => {
+          const label = document.createElement('label');
+          label.setAttribute('data-custom-check', 'true');
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = def.key;
+          cb.dataset.custom = '1';
+          label.appendChild(cb);
+          label.appendChild(document.createTextNode(' ' + def.title));
+          box.appendChild(label);
+        });
+      };
+      renderCustomSectionCheckboxes();
+
+      const openCreateProjectModal = () => {
+        document.getElementById('projectModalTitle').textContent = 'Create New Project';
+        document.getElementById('editProjectId').value = '';
+        document.getElementById('projectForm').reset();
+        document.querySelectorAll('#projSectionsCheckboxes input[type="checkbox"]').forEach((cb) => {
+          cb.checked = !cb.dataset.custom;
+        });
+        openModal('projectModal');
+      };
+
+      document.getElementById('openCreateProjectBtn').addEventListener('click', openCreateProjectModal);
+      document.getElementById('toolbarCreateProjectBtn').addEventListener('click', openCreateProjectModal);
+
+      // Project Table Delegation (Status change, Edit, Delete)
+      document.getElementById('projectsTableBody').addEventListener('change', async (e) => {
+        const statusSel = e.target.closest('[data-proj-status]');
+        if (!statusSel) return;
+        const pid = statusSel.dataset.projStatus;
+        const newStatus = statusSel.value;
+        try {
+          await apiFetch(`projects/${encodeURIComponent(pid)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: newStatus }),
+          });
+          showToast(`Project status updated to "${STATUS_LABELS[newStatus] || newStatus}".`, 'success');
+          loadProjects();
+        } catch (err) {
+          showToast(err.message || 'Status update failed', 'error');
+        }
+      });
+
+      document.getElementById('projectsTableBody').addEventListener('click', async (e) => {
+        const editBtn = e.target.closest('[data-edit-proj]');
+        if (editBtn) {
+          const pid = editBtn.dataset.editProj;
+          const proj = projectsCache.find((x) => x.id === pid);
+          if (!proj) return;
+          document.getElementById('projectModalTitle').textContent = `Edit Project: ${proj.title}`;
+          document.getElementById('editProjectId').value = proj.id;
+          document.getElementById('projTitleInput').value = proj.title || '';
+          document.getElementById('projDescInput').value = proj.description || '';
+          document.getElementById('projStatusInput').value = proj.status || 'in_progress';
+          document.querySelectorAll('#projSectionsCheckboxes input[type="checkbox"]').forEach((cb) => {
+            cb.checked = cb.dataset.custom
+              ? Boolean(proj.enabledSections && proj.enabledSections[cb.value] === true)
+              : (proj.enabledSections ? proj.enabledSections[cb.value] !== false : true);
+          });
+          openModal('projectModal');
+          return;
+        }
+
+        const delBtn = e.target.closest('[data-del-proj]');
+        if (delBtn) {
+          const pid = delBtn.dataset.delProj;
+          const proj = projectsCache.find((x) => x.id === pid);
+          if (!proj) return;
+          if (!window.confirm(`Are you sure you want to delete project "${proj.title}" and all its schedules? This cannot be undone.`)) {
+            return;
+          }
+          try {
+            await apiFetch(`projects/${encodeURIComponent(pid)}`, { method: 'DELETE' });
+            showToast(`Project "${proj.title}" deleted.`, 'success');
+            loadProjects();
+          } catch (err) {
+            showToast(err.message || 'Failed to delete project', 'error');
+          }
+        }
+      });
+
+      document.getElementById('projectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('editProjectId').value;
+        const enabledSections = {};
+        let checkedCount = 0;
+        document.querySelectorAll('#projSectionsCheckboxes input[type="checkbox"]').forEach((cb) => {
+          enabledSections[cb.value] = cb.checked;
+          if (cb.checked) checkedCount++;
+        });
+        if (checkedCount === 0) {
+          showToast('Select at least one enabled section.', 'error');
+          return;
+        }
+
+        const payload = {
+          title: document.getElementById('projTitleInput').value.trim(),
+          description: document.getElementById('projDescInput').value.trim(),
+          status: document.getElementById('projStatusInput').value,
+          enabledSections,
+        };
+
+        try {
+          if (editId) {
+            await apiFetch(`projects/${encodeURIComponent(editId)}`, {
+              method: 'PUT',
+              body: JSON.stringify(payload),
+            });
+            showToast(`Project "${payload.title}" updated.`, 'success');
+          } else {
+            await apiFetch('projects', {
+              method: 'POST',
+              body: JSON.stringify(payload),
+            });
+            showToast(`Project "${payload.title}" created.`, 'success');
+          }
+          closeModal('projectModal');
+          loadProjects();
+        } catch (err) {
+          showToast(err.message || 'Failed to save project', 'error');
+        }
+      });
+
+      // ──────────────────────────────────────────────────
+      // 3. SECURITY & AUDIT LOGS
+      // ──────────────────────────────────────────────────
+      const loadAuditLogs = async () => {
+        const search = document.getElementById('auditSearchInput').value.trim();
+        const target_type = document.getElementById('auditTypeFilter').value;
+        try {
+          const qs = new URLSearchParams({ search, target_type, limit: '150' }).toString();
+          const res = await apiFetch(`audit_logs?${qs}`);
+          const logs = res.logs || [];
+          const tbody = document.getElementById('auditTableBody');
+          const empty = document.getElementById('auditEmptyState');
+
+          if (!logs.length) {
+            tbody.innerHTML = '';
+            empty.hidden = false;
+            return;
+          }
+          empty.hidden = true;
+          tbody.innerHTML = logs
+            .map((log) => `
+              <tr>
+                <td style="font-size:0.82rem;color:var(--muted);white-space:nowrap;">
+                  ${log.createdAt ? fmtDate(new Date(log.createdAt)) : '—'}
+                </td>
+                <td style="font-weight:700;">@${escapeHtml(log.actorUsername || 'System')}</td>
+                <td>
+                  <span class="badge ${log.actorRole === 'admin' ? 'badge-admin' : 'badge-regular'}">
+                    ${escapeHtml(log.actorRole || 'admin')}
+                  </span>
+                </td>
+                <td><code style="color:var(--accent);font-size:0.84rem;">${escapeHtml(log.action)}</code></td>
+                <td>
+                  <strong>${escapeHtml(log.targetLabel || log.targetId || '—')}</strong>
+                  <span style="color:var(--muted);font-size:0.78rem;">(${escapeHtml(log.targetType)})</span>
+                </td>
+                <td style="font-size:0.8rem;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;">
+                  ${escapeHtml(JSON.stringify(log.details || {}))}
+                </td>
+              </tr>
+            `)
+            .join('');
+        } catch (err) {
+          showToast(err.message || 'Failed to load audit logs', 'error');
+        }
+      };
+
+      document.getElementById('auditSearchInput').addEventListener('input', loadAuditLogs);
+      document.getElementById('auditTypeFilter').addEventListener('change', loadAuditLogs);
+      document.getElementById('refreshAuditBtn').addEventListener('click', loadAuditLogs);
+
+      // Initial load
+      loadUsers();
+      loadProjects();
+    })();
+  </script>
+</body>
+</html>

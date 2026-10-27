@@ -1,0 +1,2409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+  <title>Project Developments Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bar-bg: #1f2937;
+      --bar-fill: #60a5fa;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35);
+      --radius: 14px;
+      --topbar-h: 62px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+      background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ---- Topbar ---- */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      height: var(--topbar-h);
+      background: rgba(11, 19, 37, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(31, 41, 55, 0.7);
+    }
+    .topbar__inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar__brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar__brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    .topbar__site-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      letter-spacing: 0.1px;
+    }
+    .topbar__site-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .topbar__actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn--logout {
+      padding: 8px 14px;
+      font-size: 0.85rem;
+    }
+    .topbar__user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .topbar__user[hidden] { display: none; }
+    .topbar__avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+    .topbar__username {
+      font-size: 0.85rem;
+      color: var(--text);
+      font-weight: 500;
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @media (max-width: 480px) {
+      .topbar__username { display: none; }
+    }
+
+    /* ---- Welcome Banner ---- */
+    .welcome-banner {
+      max-width: 1120px;
+      margin: 16px auto 0;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      background: rgba(34, 197, 94, 0.1);
+      color: #bbf7d0;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+    .welcome-banner.active {
+      display: flex;
+    }
+
+    /* ---- Project Switcher ---- */
+    .project-switcher {
+      max-width: 1120px;
+      margin: 20px auto 0;
+      padding: 0 24px 8px;
+      display: grid;
+      gap: 8px;
+    }
+    .project-switcher .switcher-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+      .project-switcher .switcher-row { grid-template-columns: 1fr; }
+    }
+    .project-switcher .helper {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    /* ---- Section Picker ---- */
+    .section-picker {
+      margin-top: 12px;
+      padding: 18px;
+      border-radius: var(--radius);
+      border: 1px solid #1f2937;
+      background: rgba(11, 19, 37, 0.96);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 14px;
+    }
+    .section-picker[hidden] { display: none; }
+    .section-picker__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .section-picker__title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .section-picker__helper {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .section-picker__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .section-picker__item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: rgba(15, 23, 42, 0.6);
+      gap: 14px;
+      transition: border-color 0.15s;
+    }
+    .section-picker__item:hover {
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+    .section-picker__label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .section-picker__meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .section-picker__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+      appearance: none;
+      background: #0b1325;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .check:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .check:checked::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 2px solid #0b1325;
+      border-top: none;
+      border-right: none;
+      transform: rotate(-45deg);
+    }
+
+    /* ---- Header ---- */
+    header {
+      padding: 28px 24px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      max-width: 1120px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+    .page-header {
+      flex: 1;
+      min-width: 0;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .edit-title {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .edit-title:hover {
+      color: var(--accent);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+    .edit-title svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+    }
+    .inline-title-editor {
+      margin-top: 10px;
+      display: none;
+      gap: 10px;
+    }
+    .inline-title-editor.active {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+    @media (max-width: 640px) {
+      .inline-title-editor.active { grid-template-columns: 1fr; }
+    }
+    .logo {
+      width: 46px;
+      height: 46px;
+      object-fit: contain;
+      flex-shrink: 0;
+      display: block;
+    }
+    h1 { margin: 0; font-size: 1.6rem; letter-spacing: 0.2px; }
+    .subtitle { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .info-trigger { position: relative; }
+    .pill {
+      background: rgba(11, 19, 37, 0.8);
+      border: 1px solid #1e293b;
+      color: var(--muted);
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    /* ---- Buttons ---- */
+    .btn {
+      background: var(--accent);
+      color: #062a3a;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.28);
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover {
+      opacity: 0.92;
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.42);
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn.secondary {
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    }
+    .btn.secondary:hover {
+      border-color: rgba(56, 189, 248, 0.28);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    }
+
+    /* ---- Info Menu ---- */
+    .info-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 230px;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      background: #0b1325;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 2px;
+      z-index: 10;
+    }
+    .info-menu[hidden] { display: none; }
+    .info-menu button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .info-menu button:hover {
+      border-color: #1f2937;
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    /* ---- Main & Grid ---- */
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 24px 80px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 960px) { .grid { grid-template-columns: repeat(6, 1fr); } }
+    @media (max-width: 640px) { .grid { grid-template-columns: repeat(1, 1fr); } }
+
+    /* ---- Page Actions ---- */
+    .page-actions {
+      max-width: 1120px;
+      margin: 36px auto 0;
+      padding: 0 24px 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    @media (max-width: 640px) {
+      .page-actions { margin-top: 28px; gap: 10px; }
+      .page-actions .btn { flex: 1 1 100%; min-height: 46px; font-size: 0.95rem; }
+    }
+
+    /* ---- Empty State ---- */
+    .empty-state {
+      max-width: 1120px;
+      margin: 24px auto 0;
+      padding: 40px 24px;
+      border-radius: var(--radius);
+      border: 1px dashed rgba(31, 41, 55, 0.9);
+      background: rgba(11, 19, 37, 0.7);
+      text-align: center;
+      color: var(--muted);
+    }
+    .empty-state p { margin: 0 0 6px; font-size: 0.95rem; }
+    .empty-state__actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* ---- Cards ---- */
+    .card {
+      grid-column: span 4;
+      background: linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%), var(--card);
+      border: 1px solid #1f2937;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.45);
+      border-color: rgba(56, 189, 248, 0.2);
+    }
+    .card.overview {
+      grid-column: span 12;
+      padding: 24px;
+      gap: 18px;
+    }
+    .card.overview:hover { transform: translateY(-2px); }
+    @media (max-width: 960px) { .card.overview { grid-column: span 6; } }
+    @media (max-width: 640px) { .card.overview { grid-column: span 1; } }
+
+    /* ---- Overview Card ---- */
+    .overview-label {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+    .overview-metric {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: grid;
+      gap: 3px;
+    }
+    .overview-metric .metric-label {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    .overview-metric .metric-value {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #93c5fd;
+      line-height: 1.1;
+    }
+    .overview-metric .metric-hint {
+      margin: 0;
+      font-size: 0.77rem;
+      color: var(--muted);
+    }
+    .overview-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 0.83rem;
+      color: var(--muted);
+      border-top: 1px solid #1f2937;
+      padding-top: 12px;
+    }
+    .overview-meta strong { color: var(--text); }
+
+    /* ---- Card Layout ---- */
+    .card header {
+      padding: 0;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 18px; height: 18px; fill: currentColor; }
+    .card-icon--electrical   { background: rgba(251, 191, 36, 0.12);  color: #fbbf24; }
+    .card-icon--architectural{ background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
+    .card-icon--mechanical   { background: rgba(52,  211, 153, 0.12); color: #34d399; }
+    .card-icon--plumbing     { background: rgba(56,  189, 248, 0.12); color: #38bdf8; }
+    .card-icon--electronics  { background: rgba(251, 113, 133, 0.12); color: #fb7185; }
+
+    .title { font-weight: 700; letter-spacing: 0.2px; font-size: 1rem; }
+    .status {
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      font-weight: 600;
+    }
+    .status.ontrack { background: rgba(34, 197, 94, 0.1);  color: var(--success); border-color: rgba(34, 197, 94, 0.2); }
+    .status.atrisk  { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.2); }
+    .status.delayed { background: rgba(239, 68, 68, 0.1);  color: var(--danger);  border-color: rgba(239, 68, 68, 0.2); }
+
+    .meta {
+      display: flex;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      flex-wrap: wrap;
+    }
+    .meta span {
+      background: rgba(31, 41, 55, 0.6);
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      border-radius: 6px;
+      padding: 2px 8px;
+    }
+
+    /* ---- Progress ---- */
+    .progress-wrap { display: grid; gap: 8px; }
+    .progress-bar {
+      height: 8px;
+      background: var(--bar-bg);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #60a5fa, #22d3ee);
+      transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .progress-value {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.88rem;
+    }
+    .progress-value .percent { font-weight: 800; color: #93c5fd; }
+    .progress-value .label   { color: var(--muted); }
+
+    /* ---- Controls / Inputs ---- */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .controls.single { grid-template-columns: auto; justify-content: flex-end; }
+    .input {
+      width: 100%;
+      padding: 9px 12px;
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      outline: none;
+      font-size: 0.9rem;
+      transition: border-color 0.15s;
+    }
+    .input:focus { border-color: rgba(56, 189, 248, 0.45); }
+    .select {
+      width: 100%;
+      padding: 9px 12px;
+      background: #0b1325;
+      color: var(--text);
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      transition: border-color 0.15s;
+    }
+    .select:focus { outline: none; border-color: rgba(56, 189, 248, 0.45); }
+    .footnote {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      border-top: 1px solid rgba(31, 41, 55, 0.7);
+      padding-top: 10px;
+    }
+
+    /* ---- Utility ---- */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    .card[hidden] { display: none !important; }
+    .card::after {
+      content: "";
+      position: absolute; inset: -80px -80px auto auto;
+      width: 220px; height: 220px;
+      background: radial-gradient(120px 120px at 50% 50%, rgba(56,189,248,0.12), transparent 70%);
+      transform: rotate(15deg);
+      pointer-events: none;
+    }
+
+    /* =====================================================================
+       Futuristic theme layer for the public overview (visual only)
+       ===================================================================== */
+    @property --ui-angle {
+      syntax: "<angle>";
+      inherits: false;
+      initial-value: 0deg;
+    }
+    :root {
+      --glass: rgba(15, 23, 42, 0.55);
+      --glass-strong: rgba(15, 23, 42, 0.8);
+      --line: rgba(148, 163, 184, 0.14);
+      --line-strong: rgba(56, 189, 248, 0.38);
+      --cyan: #22d3ee;
+      --violet: #a78bfa;
+      --glow: 0 0 0 1px rgba(56, 189, 248, 0.28), 0 22px 44px rgba(2, 6, 23, 0.6), 0 0 38px rgba(56, 189, 248, 0.16);
+    }
+
+    html { background: #050a17; }
+    body {
+      background:
+        radial-gradient(1000px 560px at 10% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+        radial-gradient(900px 520px at 100% 0%, rgba(167, 139, 250, 0.14), transparent 60%),
+        linear-gradient(180deg, #070d1d 0%, #050a17 100%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    /* Backdrop: perspective grid, aurora and drifting particles */
+    body::before,
+    body::after,
+    main::before {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: -1;
+    }
+    body::before {
+      inset: -50% -50% 0;
+      background-image:
+        linear-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+      background-size: 56px 56px;
+      transform: perspective(700px) rotateX(58deg) translateY(30%);
+      transform-origin: center bottom;
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.95), transparent 70%);
+              mask-image: linear-gradient(to top, rgba(0,0,0,0.95), transparent 70%);
+      animation: ui-grid-scroll 12s linear infinite;
+    }
+    body::after {
+      inset: 0;
+      background:
+        radial-gradient(460px 280px at 18% 28%, rgba(34, 211, 238, 0.13), transparent 70%),
+        radial-gradient(420px 300px at 82% 68%, rgba(167, 139, 250, 0.13), transparent 70%),
+        radial-gradient(360px 240px at 60% 10%, rgba(59, 130, 246, 0.10), transparent 70%);
+      filter: blur(24px);
+      animation: ui-aurora 16s ease-in-out infinite alternate;
+    }
+    main::before {
+      inset: 0;
+      background-image:
+        radial-gradient(2px 2px at 8% 20%, rgba(125, 211, 252, 0.9), transparent 60%),
+        radial-gradient(1.5px 1.5px at 22% 70%, rgba(196, 181, 253, 0.8), transparent 60%),
+        radial-gradient(2px 2px at 35% 40%, rgba(125, 211, 252, 0.7), transparent 60%),
+        radial-gradient(1.5px 1.5px at 48% 85%, rgba(255, 255, 255, 0.7), transparent 60%),
+        radial-gradient(2px 2px at 62% 25%, rgba(196, 181, 253, 0.8), transparent 60%),
+        radial-gradient(1.5px 1.5px at 75% 55%, rgba(125, 211, 252, 0.8), transparent 60%),
+        radial-gradient(2px 2px at 88% 15%, rgba(255, 255, 255, 0.6), transparent 60%),
+        radial-gradient(1.5px 1.5px at 94% 78%, rgba(125, 211, 252, 0.7), transparent 60%);
+      background-size: 100% 100vh;
+      animation: ui-particles 26s linear infinite;
+      opacity: 0.8;
+    }
+    @keyframes ui-grid-scroll { to { background-position: 0 56px, 0 0; } }
+    @keyframes ui-aurora {
+      0%   { transform: translate3d(0, 0, 0) scale(1); }
+      50%  { transform: translate3d(5%, -4%, 0) scale(1.1); }
+      100% { transform: translate3d(-5%, 4%, 0) scale(1.03); }
+    }
+    @keyframes ui-particles { to { background-position: 0 -100vh; } }
+
+    /* Top navigation */
+    .topbar {
+      background: rgba(7, 13, 29, 0.7);
+      border-bottom: 1px solid var(--line);
+      animation: ui-fade-down 0.6s ease both;
+    }
+    .topbar::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--violet), transparent);
+      background-size: 40% 100%;
+      background-repeat: no-repeat;
+      animation: ui-scan 5s ease-in-out infinite;
+    }
+    @keyframes ui-scan {
+      0%   { background-position: -40% 0; }
+      100% { background-position: 140% 0; }
+    }
+    .topbar .logo {
+      border-radius: 12px;
+      padding: 3px;
+      background: radial-gradient(circle at 50% 35%, rgba(56, 189, 248, 0.25), rgba(15, 23, 42, 0.6));
+      border: 1px solid var(--line-strong);
+      animation: ui-logo-glow 4s ease-in-out infinite;
+    }
+    @keyframes ui-logo-glow {
+      0%, 100% { box-shadow: 0 0 12px rgba(56, 189, 248, 0.2); }
+      50%      { box-shadow: 0 0 26px rgba(34, 211, 238, 0.45); }
+    }
+    .topbar__site-name { font-weight: 800; letter-spacing: 0.2px; }
+    .topbar__site-sub { color: var(--accent); letter-spacing: 0.22em; font-weight: 600; }
+    .topbar__site-sub::before {
+      content: "";
+      display: inline-block;
+      width: 6px; height: 6px;
+      margin-right: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      vertical-align: 1px;
+      animation: ui-ping 2.2s ease-out infinite;
+    }
+    .topbar__avatar { box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35), 0 0 14px rgba(56, 189, 248, 0.35); }
+    @keyframes ui-ping {
+      0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+      80%  { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .welcome-banner {
+      border-color: rgba(34, 197, 94, 0.35);
+      background: linear-gradient(90deg, rgba(34, 197, 94, 0.16), rgba(34, 211, 238, 0.08));
+      -webkit-backdrop-filter: blur(8px);
+              backdrop-filter: blur(8px);
+      animation: ui-fade-up 0.5s ease both;
+    }
+
+    /* Project switcher panel */
+    .project-switcher {
+      margin-top: 24px;
+      padding: 16px 20px;
+      width: calc(100% - 48px);
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(12px);
+              backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+      gap: 10px;
+      animation: ui-fade-up 0.6s 0.1s ease both;
+    }
+    .section-picker {
+      border-color: var(--line);
+      background: var(--glass-strong);
+      animation: ui-fade-up 0.3s ease both;
+    }
+    .section-picker__item { border-color: var(--line); }
+    .check:checked { box-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+
+    /* Hero header */
+    body > header {
+      padding-top: 34px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 18px;
+      animation: ui-fade-up 0.7s 0.15s ease both;
+    }
+    .title-row { flex-wrap: nowrap; gap: 12px; }
+    h1 {
+      min-width: 0;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+      font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      background: linear-gradient(90deg, #f8fafc 0%, #7dd3fc 35%, #c4b5fd 60%, #f8fafc 100%);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+              background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.25));
+      animation: ui-text-shine 8s linear infinite;
+    }
+    @keyframes ui-text-shine { to { background-position: 220% center; } }
+    .subtitle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+    .subtitle::before {
+      content: "LIVE";
+      padding: 3px 8px 3px 20px;
+      border-radius: 999px;
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      font-weight: 800;
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      background:
+        radial-gradient(circle at 10px 50%, #ef4444 0 3.5px, transparent 4.5px),
+        rgba(239, 68, 68, 0.12);
+      animation: ui-live 1.6s ease-in-out infinite;
+    }
+    @keyframes ui-live {
+      50% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.45); border-color: rgba(239, 68, 68, 0.8); }
+    }
+    .edit-title {
+      flex-shrink: 0;
+      border-color: var(--line-strong);
+      background: var(--glass);
+      transition: transform 0.2s, box-shadow 0.2s, color 0.2s;
+    }
+    .edit-title:hover { transform: rotate(-8deg); box-shadow: 0 0 16px rgba(56, 189, 248, 0.35); }
+
+    .pill {
+      border-color: var(--line);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(8px);
+              backdrop-filter: blur(8px);
+    }
+    #lastUpdate { color: #e2e8f0; font-variant-numeric: tabular-nums; }
+
+    .input, .select {
+      background: rgba(11, 19, 37, 0.75);
+      border-color: #233047;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input:focus, .select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 0 18px rgba(56, 189, 248, 0.15);
+    }
+
+    /* Buttons */
+    .btn {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+      color: #04202e;
+      font-weight: 700;
+      transition: transform 0.18s ease, box-shadow 0.2s ease;
+    }
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0; left: -60%;
+      width: 40%;
+      background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.55s ease;
+      pointer-events: none;
+    }
+    .btn:hover { opacity: 1; transform: translateY(-2px); box-shadow: 0 10px 26px rgba(34, 211, 238, 0.4); }
+    .btn:hover::after { left: 120%; }
+    .btn:active { transform: translateY(0); }
+    .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+    .btn.secondary {
+      background: var(--glass);
+      color: #e2e8f0;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      -webkit-backdrop-filter: blur(8px);
+              backdrop-filter: blur(8px);
+    }
+    .btn.secondary::after { background: linear-gradient(110deg, transparent, rgba(56, 189, 248, 0.2), transparent); }
+    .btn.secondary:hover {
+      border-color: var(--line-strong);
+      box-shadow: 0 8px 22px rgba(2, 6, 23, 0.5), 0 0 18px rgba(56, 189, 248, 0.2);
+    }
+    .info-menu {
+      border-color: var(--line);
+      background: rgba(11, 19, 37, 0.95);
+      -webkit-backdrop-filter: blur(14px);
+              backdrop-filter: blur(14px);
+      animation: ui-fade-up 0.2s ease both;
+    }
+
+    /* Cards (cursor spotlight driven by --mx / --my) */
+    main { padding-top: 24px; }
+    .grid { gap: 20px; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        radial-gradient(420px circle at var(--mx, -500px) var(--my, -500px), rgba(56, 189, 248, 0.12), transparent 45%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01) 40%),
+        rgba(13, 20, 38, 0.72);
+      -webkit-backdrop-filter: blur(14px);
+              backdrop-filter: blur(14px);
+      box-shadow: 0 16px 36px rgba(2, 6, 23, 0.5);
+      transition: transform 0.35s cubic-bezier(.2,.8,.2,1), box-shadow 0.35s ease, border-color 0.35s ease;
+      animation: ui-card-in 0.8s cubic-bezier(.2,.8,.2,1) backwards;
+    }
+    .card:nth-child(1) { animation-delay: 0.20s; }
+    .card:nth-child(2) { animation-delay: 0.32s; }
+    .card:nth-child(3) { animation-delay: 0.40s; }
+    .card:nth-child(4) { animation-delay: 0.48s; }
+    .card:nth-child(5) { animation-delay: 0.56s; }
+    .card:nth-child(6) { animation-delay: 0.64s; }
+    .card:nth-child(7) { animation-delay: 0.72s; }
+    .card:nth-child(n+8) { animation-delay: 0.80s; }
+    @keyframes ui-card-in {
+      from { opacity: 0; transform: translateY(26px) scale(0.97); filter: blur(4px); }
+      to   { opacity: 1; transform: none; filter: none; }
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--violet), transparent);
+      background-size: 200% 100%;
+      opacity: 0.6;
+      animation: ui-edge 6s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes ui-edge { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    .card::after { transition: transform 0.6s ease, opacity 0.4s ease; }
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: var(--line-strong);
+      box-shadow: var(--glow);
+    }
+    .card:hover::before { opacity: 1; }
+    .card:hover::after { transform: rotate(15deg) translate(-30px, 30px) scale(1.3); }
+
+    /* Overview card: rotating neon border + glowing metrics */
+    .card.overview {
+      padding: 26px;
+      background:
+        radial-gradient(520px circle at var(--mx, -500px) var(--my, -500px), rgba(56, 189, 248, 0.10), transparent 45%),
+        linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(167, 139, 250, 0.06) 50%, rgba(13, 20, 38, 0.2)),
+        rgba(13, 20, 38, 0.78);
+    }
+    .card.overview::before {
+      inset: 0;
+      height: auto;
+      padding: 1.5px;
+      border-radius: inherit;
+      background: conic-gradient(from var(--ui-angle), transparent 0 55%, var(--cyan) 70%, var(--violet) 85%, transparent 100%);
+      background-size: auto;
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+      opacity: 0.9;
+      animation: ui-spin 6s linear infinite;
+    }
+    @keyframes ui-spin { to { --ui-angle: 360deg; } }
+    .card.overview:hover { transform: translateY(-3px); }
+    .overview-label { color: var(--accent); font-weight: 700; }
+    .card.overview .title {
+      font-size: 1.35rem;
+      margin: 6px 0 0;
+    }
+    .overview-grid { gap: 16px; }
+    .overview-metric {
+      position: relative;
+      overflow: hidden;
+      padding: 18px 18px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(2, 6, 23, 0.45);
+      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      animation: ui-fade-up 0.7s ease backwards;
+    }
+    .overview-metric:nth-child(1) { animation-delay: 0.45s; }
+    .overview-metric:nth-child(2) { animation-delay: 0.55s; }
+    .overview-metric:nth-child(3) { animation-delay: 0.65s; }
+    .overview-metric::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 30%, rgba(125, 211, 252, 0.10) 50%, transparent 70%);
+      background-size: 250% 100%;
+      animation: ui-sweep 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .overview-metric:nth-child(2)::after { animation-delay: 1.2s; }
+    .overview-metric:nth-child(3)::after { animation-delay: 2.4s; }
+    @keyframes ui-sweep {
+      0%, 30% { background-position: 150% 0; }
+      70%, 100% { background-position: -100% 0; }
+    }
+    .overview-metric:hover {
+      transform: translateY(-3px);
+      border-color: var(--line-strong);
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.16);
+    }
+    .overview-metric .metric-label {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .overview-metric .metric-value {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(180deg, #ffffff, #7dd3fc);
+      -webkit-background-clip: text;
+              background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.45));
+      animation: ui-breathe 3.5s ease-in-out infinite;
+    }
+    @keyframes ui-breathe {
+      50% { filter: drop-shadow(0 0 22px rgba(34, 211, 238, 0.7)); }
+    }
+    .overview-meta { border-top-color: var(--line); }
+
+    .card header { gap: 10px; }
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+      box-shadow: 0 0 16px color-mix(in srgb, currentColor 24%, transparent);
+      transition: transform 0.35s ease;
+    }
+    .card:hover .card-icon { transform: scale(1.1) rotate(-6deg); }
+    .card .title { color: #f8fafc; font-size: 1.06rem; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      border-color: rgba(148, 163, 184, 0.2);
+      background: rgba(148, 163, 184, 0.08);
+      color: var(--muted);
+    }
+    .status::before {
+      content: "";
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      flex-shrink: 0;
+    }
+    .status.ontrack::before, .status.atrisk::before, .status.delayed::before { animation: ui-blink 2.4s ease-in-out infinite; }
+    @keyframes ui-blink { 50% { opacity: 0.3; } }
+
+    .meta span {
+      background: rgba(2, 6, 23, 0.4);
+      border-color: rgba(148, 163, 184, 0.12);
+      border-radius: 8px;
+      padding: 3px 9px;
+    }
+
+    .progress-value .label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+    }
+    .progress-value .percent {
+      font-size: 1.5rem;
+      font-variant-numeric: tabular-nums;
+      color: #e0f2fe;
+      text-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+    }
+    .progress-bar {
+      height: 10px;
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    .progress-fill {
+      position: relative;
+      background: linear-gradient(90deg, #3b82f6, #22d3ee, #a78bfa, #3b82f6);
+      background-size: 300% 100%;
+      box-shadow: 0 0 12px rgba(34, 211, 238, 0.6);
+      transition: width 1100ms cubic-bezier(.2,.8,.2,1);
+      animation: ui-flow 5s linear infinite;
+    }
+    .progress-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+      background-size: 50% 100%;
+      background-repeat: no-repeat;
+      animation: ui-shimmer 2.2s ease-in-out infinite;
+    }
+    @keyframes ui-flow { to { background-position: -300% 0; } }
+    @keyframes ui-shimmer { from { background-position: -100% 0; } to { background-position: 200% 0; } }
+
+    .controls.single .btn { width: 100%; justify-content: center; }
+    .footnote { border-top: 1px dashed rgba(148, 163, 184, 0.14); }
+
+    /* Bottom action dock */
+    .page-actions {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(12px);
+              backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+      animation: ui-fade-up 0.7s 0.9s ease backwards;
+    }
+    .empty-state {
+      border-color: var(--line-strong);
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(10px);
+              backdrop-filter: blur(10px);
+    }
+
+    @keyframes ui-fade-up   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes ui-fade-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 640px) {
+      .project-switcher { width: calc(100% - 32px); padding: 14px 16px; }
+      body > header { padding-left: 16px; padding-right: 16px; }
+      main { padding-left: 16px; padding-right: 16px; }
+      .page-actions { margin-left: 16px; margin-right: 16px; }
+      .topbar__inner { padding: 0 16px; }
+      .card, .card.overview { grid-column: 1 / -1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media print {
+      @page { margin: 0; }
+      body {
+        background: #fff !important;
+        color: #0f172a !important;
+        padding: 12mm 10mm !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #agyRbacTopbar,
+      #agyChangePwdModal,
+      #agyToastContainer,
+      .no-print,
+      body > header,
+      .page-header,
+      .topbar,
+      .welcome-banner,
+      .project-switcher,
+      .controls,
+      footer {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+      }
+      main {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .card {
+        background: #fff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+      .card::after, .card::before, body::before, body::after, main::before, .topbar::after,
+      .progress-fill::after, .overview-metric::after, .subtitle::before { display: none !important; }
+      .card, .overview-metric, .page-actions { animation: none !important; transform: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+      .overview-metric .metric-value { -webkit-text-fill-color: #0f172a !important; background: none !important; filter: none !important; animation: none !important; }
+      .overview-metric { background: #fff !important; border-color: #e2e8f0 !important; }
+      .progress-fill { box-shadow: none !important; animation: none !important; }
+      .progress-value .percent { text-shadow: none !important; }
+      .title, .percent, .subitem-title, .subitem-value { color: #0f172a !important; }
+      .desc, .footnote, .subitems-header, .overview-label { color: #475569 !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ── Top Navigation ── -->
+  <nav class="topbar">
+    <div class="topbar__inner">
+      <div class="topbar__brand">
+        <img class="logo" src="images/project_tracker_25p.png" alt="Project Tracker logo" width="46" height="46" />
+        <div class="topbar__brand-text">
+          <span class="topbar__site-name">Project Developments</span>
+          <span class="topbar__site-sub">Dashboard</span>
+        </div>
+      </div>
+      <div class="topbar__actions">
+        <div class="topbar__user" id="topbarUser" hidden>
+          <div class="topbar__avatar" id="topbarAvatar" aria-hidden="true"></div>
+          <span class="topbar__username" id="topbarUsername"></span>
+          <button class="btn secondary btn--logout" id="logoutButton">
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="14" height="14" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="welcome-banner" id="welcomeBanner" role="status" aria-live="polite" hidden></div>
+  <div class="project-switcher" role="region" aria-label="Saved projects">
+    <div class="switcher-row">
+      <label class="sr-only" for="projectSelect">Saved projects</label>
+      <button class="btn secondary" id="sectionPickerToggle" aria-expanded="false" aria-controls="sectionPicker">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M3 18h6v-2H3v2zm0-5h12v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        Open / Manage Projects
+      </button>
+      <select class="select" id="projectSelect" aria-label="Saved projects"></select>
+    </div>
+    <p class="helper">Project updates are managed in the secure dashboard. This view reflects the active project only.</p>
+    <div class="section-picker" id="sectionPicker" hidden role="region" aria-label="Select sections">
+      <div class="section-picker__header">
+        <div>
+          <p class="section-picker__title">Include Sections</p>
+          <p class="section-picker__helper">Toggle sections below; checked entries become part of the next saved project.</p>
+        </div>
+        <button class="btn secondary" id="resetSections" type="button">Reset List</button>
+      </div>
+      <ul class="section-picker__list" id="sectionPickerList"></ul>
+      <div class="section-picker__actions">
+        <button class="btn secondary" id="closeSectionPicker" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <header>
+    <div class="page-header">
+      <div class="title-row">
+        <h1 id="projectTitle">Project Developments</h1>
+        <button class="edit-title" id="editTitleBtn" aria-label="Edit project name" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92.83l-.83-.83 9.19-9.19.83.83-9.19 9.19zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+          </svg>
+        </button>
+      </div>
+      <form class="inline-title-editor" id="titleForm">
+        <label class="sr-only" for="titleInput">Project Title</label>
+        <input class="input" id="titleInput" type="text" placeholder="Edit current project title" autocomplete="off" />
+        <button class="btn" type="submit">Save</button>
+        <button class="btn secondary" type="button" id="cancelTitleEdit">Cancel</button>
+      </form>
+      <div class="subtitle">% completeness for key disciplines</div>
+    </div>
+    <div class="toolbar">
+      <span class="pill">Project Tracker: v1.0.2</span>
+      <span class="pill">Last update: <span id="lastUpdate">—</span></span>
+      <div class="info-trigger">
+        <button class="btn secondary" id="projectInfoToggle" aria-expanded="false" aria-controls="projectInfoMenu">Project Info</button>
+        <div class="info-menu" id="projectInfoMenu" hidden>
+          <button class="menu-item" data-route="e_manage_subitems.html">Electrical Section Manager</button>
+          <button class="menu-item" data-route="a_manage_subitems.html">Architectural Section Manager</button>
+          <button class="menu-item" data-route="m_manage_subitems.html">Mechanical Section Manager</button>
+          <button class="menu-item" data-route="p_manage_subitems.html">Plumbing Section Manager</button>
+          <button class="menu-item" data-route="el_manage_subitems.html">Electronics Section Manager</button>
+          <button class="menu-item" data-route="g_manage_subitems.html">General Section Manager</button>
+          <button class="menu-item" data-route="o_manage_subitems.html">Other Section Manager</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid" id="cards">
+      <article class="card overview" id="overviewCard" aria-live="polite">
+        <header>
+          <div>
+            <p class="overview-label">Active Project</p>
+            <h2 class="title" id="overviewProjectName">Overview</h2>
+          </div>
+          <div class="status" id="overviewStatus">—</div>
+        </header>
+        <div class="overview-grid">
+          <div class="overview-metric">
+            <p class="metric-label">Total Completeness</p>
+            <p class="metric-value" id="overviewPercent">0%</p>
+            <p class="metric-hint">Tracked sections only</p>
+          </div>
+          <div class="overview-metric">
+            <p class="metric-label">Sections Active</p>
+            <p class="metric-value" id="overviewSectionCount">0</p>
+            <p class="metric-hint" id="overviewSectionHelper">of 0 enabled</p>
+          </div>
+          <div class="overview-metric">
+            <p class="metric-label">Tracked Items</p>
+            <p class="metric-value" id="overviewTrackedCount">0</p>
+            <p class="metric-hint">Monitoring checkpoints</p>
+          </div>
+        </div>
+        <div class="overview-meta">
+          <span>Updated <strong id="overviewLastUpdated">—</strong></span>
+          <span>by <strong id="overviewUpdatedBy">—</strong></span>
+        </div>
+      </article>
+      <article class="card" data-key="electrical">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--electrical" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div class="title">Electrical</div>
+          </div>
+          <div class="status" id="status-electrical">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: E-Team</span>
+          <span>Scope: Lighting, Power and Controls</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-electrical">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Electrical progress">
+            <div class="progress-fill" id="bar-electrical"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="electrical">Open Section</button>
+        </div>
+        <div class="footnote">Panelboards, lighting fixtures, and addressable LED rollout status.</div>
+      </article>
+
+      <article class="card" data-key="architectural">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--architectural" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </div>
+            <div class="title">Architectural</div>
+          </div>
+          <div class="status" id="status-architectural">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: A-Team</span>
+          <span>Scope: Envelope, Interiors, Finishes</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-architectural">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Architectural progress">
+            <div class="progress-fill" id="bar-architectural"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="architectural">Open Section</button>
+        </div>
+        <div class="footnote">Envelope systems, interior fit-out, and public realm deliverables.</div>
+      </article>
+
+      <article class="card" data-key="mechanical">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--mechanical" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </div>
+            <div class="title">Mechanical</div>
+          </div>
+          <div class="status" id="status-mechanical">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: M-Team</span>
+          <span>Scope: HVAC, Plumbing, Fire Protection</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-mechanical">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Mechanical progress">
+            <div class="progress-fill" id="bar-mechanical"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="mechanical">Open Section</button>
+        </div>
+        <div class="footnote">Air systems, hydronics, suppression, and automation metrics.</div>
+      </article>
+      
+      <article class="card" data-key="plumbing">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--plumbing" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+            </div>
+            <div class="title">Plumbing</div>
+          </div>
+          <div class="status" id="status-plumbing">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: P-Team</span>
+          <span>Scope: Pipes, Fixtures, Valves</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-plumbing">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Plumbing progress">
+            <div class="progress-fill" id="bar-plumbing"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="plumbing">Open Section</button>
+        </div>
+        <div class="footnote">Water supply, drainage, and fixture installations tracked here.</div>
+      </article>
+
+      <article class="card" data-key="electronics">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--electronics" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M9 10h1v1H9zm0 2h1v1H9zm0 2h1v1H9zm4-4h1v1h-1zm0 2h1v1h-1zm0 2h1v1h-1zm-2-6h1v1h-1zm0 2h1v1h-1zm0 2h1v1h-1zm0 2h1v1h-1zM5 20V4h14v16H5zm2-18C5.9 2 5 2.9 5 4v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H7z"/></svg>
+            </div>
+            <div class="title">Electronics</div>
+          </div>
+          <div class="status" id="status-electronics">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: EL-Team</span>
+          <span>Scope: Circuitry, Devices, Controls</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-electronics">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Electronics progress">
+            <div class="progress-fill" id="bar-electronics"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="electronics">Open Section</button>
+        </div>
+        <div class="footnote">Circuitry, devices, and control systems monitored here.</div>
+      </article>
+
+      <article class="card" data-key="general">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--general" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div class="title">General</div>
+          </div>
+          <div class="status" id="status-general">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: G-Team</span>
+          <span>Scope: General project developments and miscellaneous tasks</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-general">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="General progress">
+            <div class="progress-fill" id="bar-general"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="general">Open Section</button>
+        </div>
+        <div class="footnote">General project developments and miscellaneous tasks monitored here.</div>
+      </article>
+
+      <article class="card" data-key="others">
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--others" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div class="title">Others</div>
+          </div>
+          <div class="status" id="status-others">—</div>
+        </header>
+        <div class="meta">
+          <span>Lead: Others</span>
+          <span>Scope: Miscellaneous tasks and other developments</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-others">0%</span>
+          </div>
+          <div class="progress-bar" aria-label="Others progress">
+            <div class="progress-fill" id="bar-others"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="others">Open Section</button>
+        </div>
+        <div class="footnote">Miscellaneous tasks and other developments monitored here.</div>
+      </article>
+
+    </section>
+
+    <div class="page-actions">
+      <!-- Temporarily removed this button -->
+      <!-- <button class="btn" id="loginButton">Login</button> -->
+      <button class="btn" id="viewCompletedProjects">Completed Projects</button>
+      <button class="btn" id="viewLogs">View Logs</button>
+      <button class="btn" id="createGanttChart">Create Gantt Chart</button>
+    </div>
+    <section class="empty-state" id="noActiveProjects" hidden>
+      <p>All saved projects have reached 100% completeness. Visit Completed Projects to review the final record.</p>
+      <div class="empty-state__actions">
+        <button class="btn" id="emptyCompletedProjects" type="button">Completed Projects</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="state.js"></script>
+  <script>
+    (function () {
+      const {
+        SECTION_ORDER,
+        SECTION_DEFS,
+        isCustomSection,
+        getSectionDisplayName,
+        loadProjectState,
+        persistProjectState,
+        fmtDate,
+        statusClass,
+        getSectionPercent,
+        getActiveProject,
+        setActiveProject,
+        listProjects,
+        touchProject,
+        isSectionEnabled,
+        isProjectCompleted,
+        getEnabledSections
+      } = window.ProjectData;
+
+      let state = null;
+
+      const AUTH_KEY = 'projectDashboardAuth';
+      const LOGIN_PAGE = 'login.html';
+      const WELCOME_KEY = 'projectDashboardWelcomeName';
+      const USER_DASHBOARD = 'user_index.html';
+
+      const isAuthenticated = () => window.ProjectData && window.ProjectData.isAuthenticated();
+
+      const redirectToLogin = () => {
+        const target = encodeURIComponent(USER_DASHBOARD);
+        window.location.href = `${LOGIN_PAGE}?redirect=${target}`;
+      };
+
+      const ensureAuthenticated = () => {
+        if (isAuthenticated()) { return true; }
+        redirectToLogin();
+        return false;
+      };
+
+      const guardPublicButtons = () => {
+        const ALLOWED_IDS = new Set(['logoutButton', 'viewLogs']);
+        document.addEventListener('click', (event) => {
+          const button = event.target.closest('button');
+          if (!button) { return; }
+          if (ALLOWED_IDS.has(button.id)) { return; }
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          redirectToLogin();
+        }, true);
+      };
+
+      const FALLBACK_SECTION_KEYS = ['electrical', 'architectural', 'mechanical','plumbing', 'electronics', 'general', 'others'];
+      const FALLBACK_METADATA = {
+        electrical: {
+          title: 'Electrical Section Manager',
+          summary: 'Power distribution, lighting, and control scopes.'
+        },
+        architectural: {
+          title: 'Architectural Section Manager',
+          summary: 'Envelope, interior finishes, and public realm.'
+        },
+        mechanical: {
+          title: 'Mechanical Section Manager',
+          summary: 'HVAC, plumbing, and fire protection packages.'
+        },
+        plumbing: {
+          title: 'Plumbing Section Manager',
+          summary: 'Water supply, drainage, and fixture installations tracked here.'
+        },
+        electronics: {
+          title: 'Electronics Section Manager',
+          summary: 'Circuitry, devices, and control systems monitored here.'
+        },
+        general: {
+          title: 'General Section Manager',
+          summary: 'General project developments and miscellaneous tasks.'
+        },
+        others: {
+          title: 'Other Section Manager',
+          summary: 'Miscellaneous tasks and other developments monitored here.'
+        },
+        custom: {
+          title: 'Custom Section',
+          summary: 'Custom workstreams require extra setup (coming soon).'
+        }
+      };
+
+      const dedupeKeys = (list = []) => Array.from(new Set((list || []).filter(Boolean)));
+      const getBaseSectionKeys = () => {
+        const source = Array.isArray(SECTION_ORDER) && SECTION_ORDER.length
+          ? SECTION_ORDER
+          : FALLBACK_SECTION_KEYS;
+        const sanitized = dedupeKeys(source);
+        return sanitized.length ? sanitized : [...FALLBACK_SECTION_KEYS];
+      };
+
+      let selectedSections = getBaseSectionKeys();
+
+      const buildPickerEntries = () => {
+        const keys = getBaseSectionKeys();
+        const entries = keys.map((key) => {
+          const definition = SECTION_DEFS && SECTION_DEFS[key];
+          const fallback = FALLBACK_METADATA[key];
+          const title = definition?.title
+            ? getSectionDisplayName(key)
+            : fallback?.title || `${key} Section`;
+          const summary = definition?.summary || fallback?.summary || 'Track progress for this workstream.';
+          return { key, title, summary, disabled: false };
+        });
+
+        return entries;
+      };
+
+      const enforceSelectionGuard = (entries) => {
+        const allowed = entries.filter((entry) => !entry.disabled).map((entry) => entry.key);
+        const filtered = dedupeKeys(selectedSections).filter((key) => allowed.includes(key));
+        selectedSections = filtered.length ? filtered : [...allowed];
+      };
+
+      const handleSectionToggle = (key, checked, checkbox) => {
+        if (checked) {
+          if (!selectedSections.includes(key)) {
+            selectedSections = dedupeKeys([...selectedSections, key]);
+          }
+          render();
+          return;
+        }
+        if (selectedSections.length === 1) {
+          checkbox.checked = true;
+          alert('At least one section must remain selected.');
+          return;
+        }
+        selectedSections = selectedSections.filter((value) => value !== key);
+        render();
+      };
+
+      const renderSectionPicker = () => {
+        const list = document.getElementById('sectionPickerList');
+        if (!list) { return; }
+        const entries = buildPickerEntries();
+        enforceSelectionGuard(entries);
+        list.innerHTML = entries.map((entry) => {
+          const checkboxId = `section-check-${entry.key}`;
+          return `
+            <li class="section-picker__item">
+              <label class="section-picker__label" for="${checkboxId}">
+                <input type="checkbox" class="check" id="${checkboxId}" data-section="${entry.key}" ${entry.disabled ? 'disabled' : ''} />
+                ${entry.title}
+              </label>
+              <span class="section-picker__meta">${entry.summary}</span>
+            </li>
+          `;
+        }).join('') + `
+            <li class="section-picker__item">
+              <a class="section-picker__label" href="custom_sections.html">＋ Create a custom section…</a>
+              <span class="section-picker__meta">Add your own section, e.g. Operations or Mechanical Section no.2.</span>
+            </li>`;
+
+        entries.forEach((entry) => {
+          const checkbox = document.getElementById(`section-check-${entry.key}`);
+          if (!checkbox) { return; }
+          checkbox.checked = selectedSections.includes(entry.key) && !entry.disabled;
+          checkbox.addEventListener('change', () => handleSectionToggle(entry.key, checkbox.checked, checkbox));
+        });
+      };
+
+      const closeSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        const toggle = document.getElementById('sectionPickerToggle');
+        if (!picker) { return; }
+        if (!picker.hasAttribute('hidden')) {
+          picker.setAttribute('hidden', '');
+        }
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      const openSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        const toggle = document.getElementById('sectionPickerToggle');
+        if (!picker) { return; }
+        renderSectionPicker();
+        picker.removeAttribute('hidden');
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      const toggleSectionPicker = () => {
+        const picker = document.getElementById('sectionPicker');
+        if (!picker) { return; }
+        if (picker.hasAttribute('hidden')) {
+          openSectionPicker();
+        } else {
+          closeSectionPicker();
+        }
+      };
+
+      const getPendingSectionSelection = () => {
+        const allowed = new Set(getBaseSectionKeys());
+        return dedupeKeys(selectedSections).filter((key) => allowed.has(key));
+      };
+
+      const computeSelectionFilter = () => {
+        const pending = getPendingSectionSelection();
+        const base = getBaseSectionKeys();
+        if (pending.length === base.length) {
+          const baseSet = new Set(base);
+          const differs = pending.some((key) => !baseSet.has(key));
+          if (!differs) {
+            return null;
+          }
+        }
+        return new Set(pending);
+      };
+
+      const resetOverviewCard = () => {
+        const statusEl = document.getElementById('overviewStatus');
+        if (statusEl) {
+          statusEl.textContent = '—';
+          statusEl.classList.remove('ontrack', 'atrisk', 'delayed', 'started');
+        }
+        const defaults = {
+          overviewPercent: '0%',
+          overviewSectionCount: '0',
+          overviewSectionHelper: 'of 0 enabled',
+          overviewTrackedCount: '0',
+          overviewLastUpdated: '—',
+          overviewUpdatedBy: '—',
+          overviewProjectName: 'Overview'
+        };
+        Object.entries(defaults).forEach(([id, value]) => {
+          const el = document.getElementById(id);
+          if (el) { el.textContent = value; }
+        });
+      };
+
+      const computeOverviewStats = (project, selectionFilter) => {
+        const enabledKeys = getEnabledSections(project);
+        const filteredKeys = enabledKeys.filter((key) => {
+          if (selectionFilter && !selectionFilter.has(key)) { return false; }
+          return Boolean(project.sections[key]);
+        });
+        const sections = filteredKeys.map((key) => project.sections[key]).filter(Boolean);
+        const percent = sections.length
+          ? Math.round(sections.reduce((sum, section) => sum + getSectionPercent(section), 0) / sections.length)
+          : 0;
+        const trackedItems = sections.reduce((sum, section) => {
+          if (!section || !Array.isArray(section.items)) { return sum; }
+          return sum + section.items.filter((item) => item.tracked !== false).length;
+        }, 0);
+        return {
+          percent,
+          status: statusClass(percent),
+          sections: sections.length,
+          totalSections: enabledKeys.length,
+          trackedItems
+        };
+      };
+
+      const updateOverviewCard = (project, stats, hasFilter) => {
+        const projectNameEl = document.getElementById('overviewProjectName');
+        if (projectNameEl) {
+          projectNameEl.textContent = project.title || 'Active Project';
+        }
+
+        const percentEl = document.getElementById('overviewPercent');
+        if (percentEl) {
+          percentEl.textContent = `${stats.percent}%`;
+        }
+
+        const statusEl = document.getElementById('overviewStatus');
+        if (statusEl) {
+          statusEl.textContent = stats.status.text;
+          statusEl.classList.remove('ontrack', 'atrisk', 'delayed', 'started');
+          statusEl.classList.add(stats.status.cls);
+        }
+
+        const sectionCountEl = document.getElementById('overviewSectionCount');
+        if (sectionCountEl) {
+          sectionCountEl.textContent = stats.sections.toString();
+        }
+
+        const helperEl = document.getElementById('overviewSectionHelper');
+        if (helperEl) {
+          helperEl.textContent = hasFilter
+            ? `Filtered from ${stats.totalSections} enabled`
+            : `${stats.totalSections} enabled sections`;
+        }
+
+        const trackedEl = document.getElementById('overviewTrackedCount');
+        if (trackedEl) {
+          trackedEl.textContent = stats.trackedItems.toString();
+        }
+
+        const updatedEl = document.getElementById('overviewLastUpdated');
+        if (updatedEl) {
+          updatedEl.textContent = project.lastUpdate
+            ? fmtDate(new Date(project.lastUpdate))
+            : '—';
+        }
+
+        const updatedByEl = document.getElementById('overviewUpdatedBy');
+        if (updatedByEl) {
+          updatedByEl.textContent = project.lastUpdatedBy || 'System';
+        }
+      };
+
+      const getEditableProjects = () => listProjects(state)
+        .filter((project) => !isProjectCompleted(project));
+
+      const currentProject = () => {
+        const active = getActiveProject(state);
+        if (active && !isProjectCompleted(active)) {
+          return active;
+        }
+        const fallback = getEditableProjects()[0];
+        if (fallback) {
+          setActiveProject(state, fallback.id);
+          persistProjectState(state);
+          return fallback;
+        }
+        return null;
+      };
+
+      let isEditingTitle = false;
+
+      const applyTitleEditorState = () => {
+        const form = document.getElementById('titleForm');
+        if (form) {
+          form.classList.toggle('active', isEditingTitle);
+        }
+        const editButton = document.getElementById('editTitleBtn');
+        if (editButton) {
+          editButton.setAttribute('aria-pressed', isEditingTitle ? 'true' : 'false');
+        }
+      };
+
+      const openTitleEditor = () => {
+        isEditingTitle = true;
+        applyTitleEditorState();
+        const input = document.getElementById('titleInput');
+        if (input) {
+          window.requestAnimationFrame(() => {
+            input.focus();
+            input.select();
+          });
+        }
+      };
+
+      const closeTitleEditor = () => {
+        isEditingTitle = false;
+        applyTitleEditorState();
+        const input = document.getElementById('titleInput');
+        const project = currentProject();
+        if (input && project) {
+          input.value = project.title;
+        }
+      };
+
+      const toggleEmptyState = (hasProject) => {
+        const cards = document.getElementById('cards');
+        const actions = document.querySelector('.page-actions');
+        const emptyState = document.getElementById('noActiveProjects');
+        const editButton = document.getElementById('editTitleBtn');
+        if (cards) {
+          cards.toggleAttribute('hidden', !hasProject);
+        }
+        if (actions) {
+          actions.toggleAttribute('hidden', !hasProject);
+        }
+        if (emptyState) {
+          emptyState.toggleAttribute('hidden', hasProject);
+        }
+        if (editButton) {
+          editButton.disabled = !hasProject;
+        }
+      };
+
+      const showWelcomeMessage = () => {
+        const banner = document.getElementById('welcomeBanner');
+        if (!banner) { return; }
+        let welcomeName = '';
+        try {
+          if (window.sessionStorage) {
+            welcomeName = window.sessionStorage.getItem(WELCOME_KEY) || '';
+          }
+        } catch (error) {
+          welcomeName = '';
+        }
+
+        if (welcomeName) {
+          banner.textContent = `Welcome ${welcomeName} you can now update the Project Dashboard`;
+          banner.classList.add('active');
+          banner.removeAttribute('hidden');
+          try {
+            window.sessionStorage && window.sessionStorage.removeItem(WELCOME_KEY);
+          } catch (error) {
+            // ignore storage removal issues
+          }
+        } else {
+          banner.classList.remove('active');
+          banner.setAttribute('hidden', '');
+          banner.textContent = '';
+        }
+      };
+
+      const syncProjectSelect = (activeProject) => {
+        const select = document.getElementById('projectSelect');
+        if (!select) { return; }
+        const projects = getEditableProjects();
+        if (!projects.length) {
+          select.innerHTML = '<option value="" disabled>No active projects available</option>';
+          select.value = '';
+          select.disabled = true;
+          return;
+        }
+        select.disabled = false;
+        select.innerHTML = projects
+          .map((project) => `<option value="${project.id}">${project.title}</option>`)
+          .join('');
+        if (activeProject) {
+          select.value = activeProject.id;
+        } else {
+          select.value = projects[0].id;
+        }
+      };
+
+
+      // Cards for user-defined custom sections, built to match the static section cards above
+      const CUSTOM_CARD_ICON = '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 3h3v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>';
+      const renderCustomSectionCards = () => {
+        const grid = document.getElementById('cards');
+        if (!grid) { return; }
+        const customKeys = SECTION_ORDER.filter((key) => isCustomSection(key));
+        grid.querySelectorAll('[data-custom-card]').forEach((card) => {
+          if (!customKeys.includes(card.getAttribute('data-key'))) { card.remove(); }
+        });
+        customKeys.forEach((key) => {
+          const def = SECTION_DEFS[key];
+          let card = grid.querySelector(`[data-key="${key}"]`);
+          if (!card) {
+            card = document.createElement('article');
+            card.className = 'card';
+            card.setAttribute('data-key', key);
+            card.setAttribute('data-custom-card', 'true');
+            card.innerHTML = `
+        <header>
+          <div class="card-title-wrap">
+            <div class="card-icon card-icon--${key}" aria-hidden="true">${CUSTOM_CARD_ICON}</div>
+            <div class="title"></div>
+          </div>
+          <div class="status" id="status-${key}">—</div>
+        </header>
+        <div class="meta">
+          <span data-f="lead"></span>
+          <span data-f="scope"></span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-value">
+            <span class="label">Completeness</span>
+            <span class="percent" id="percent-${key}">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="bar-${key}"></div>
+          </div>
+        </div>
+        <div class="controls single">
+          <button class="btn secondary" data-open="${key}">Open Section</button>
+        </div>
+        <div class="footnote"></div>`;
+            grid.appendChild(card);
+          }
+          // User-entered text is set with textContent
+          card.querySelector('.title').textContent = def.title;
+          card.querySelector('[data-f="lead"]').textContent = `Lead: ${def.lead || '—'}`;
+          card.querySelector('[data-f="scope"]').textContent = `Scope: ${def.scope || '—'}`;
+          card.querySelector('.progress-bar').setAttribute('aria-label', `${def.title} progress`);
+          card.querySelector('.footnote').textContent = def.summary || '';
+        });
+      };
+
+      const render = () => {
+        renderCustomSectionCards();
+        const project = currentProject();
+        const hasProject = Boolean(project);
+        toggleEmptyState(hasProject);
+        const selectionFilter = computeSelectionFilter();
+        if (!project) {
+          const titleEl = document.getElementById('projectTitle');
+          if (titleEl) { titleEl.textContent = 'No active project'; }
+          const lastUpdateEl = document.getElementById('lastUpdate');
+          if (lastUpdateEl) { lastUpdateEl.textContent = '—'; }
+          const input = document.getElementById('titleInput');
+          if (input && !isEditingTitle) {
+            input.value = '';
+          }
+          resetOverviewCard();
+          applyTitleEditorState();
+          syncProjectSelect(null);
+          return;
+        }
+        SECTION_ORDER.forEach((key) => {
+          const card = document.querySelector(`[data-key="${key}"]`);
+          const enabled = isSectionEnabled(project, key);
+          const selectionAllowed = !selectionFilter || selectionFilter.has(key);
+          const showCard = enabled && selectionAllowed;
+
+          if (card) {
+            if (showCard) {
+              card.removeAttribute('hidden');
+              card.setAttribute('aria-hidden', 'false');
+            } else {
+              card.setAttribute('hidden', '');
+              card.setAttribute('aria-hidden', 'true');
+            }
+          }
+
+          if (!showCard) { return; }
+
+          const section = project.sections[key];
+          const pct = getSectionPercent(section);
+
+          const bar = document.getElementById(`bar-${key}`);
+          const label = document.getElementById(`percent-${key}`);
+          const status = document.getElementById(`status-${key}`);
+
+          if (bar) { bar.style.width = pct + '%'; }
+          if (label) { label.textContent = pct + '%'; }
+          if (status) {
+            const st = statusClass(pct);
+            status.textContent = st.text;
+            status.classList.remove('ontrack', 'atrisk', 'delayed');
+            status.classList.add(st.cls);
+          }
+
+          const footnote = card ? card.querySelector('.footnote') : null;
+          if (footnote && section && section.summary) {
+            footnote.textContent = section.summary;
+          }
+        });
+
+        const overviewStats = computeOverviewStats(project, selectionFilter);
+        updateOverviewCard(project, overviewStats, Boolean(selectionFilter));
+
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl) {
+          lastUpdateEl.textContent = fmtDate(new Date(project.lastUpdate));
+        }
+
+        const titleEl = document.getElementById('projectTitle');
+        if (titleEl) { titleEl.textContent = project.title; }
+
+        const input = document.getElementById('titleInput');
+        if (input && !isEditingTitle) {
+          input.value = project.title;
+        }
+
+        applyTitleEditorState();
+
+        syncProjectSelect(project);
+      };
+
+      const saveAndRender = () => {
+        persistProjectState(state);
+        render();
+      };
+
+      const wire = () => {
+        const editTitleBtn = document.getElementById('editTitleBtn');
+        if (editTitleBtn) {
+          editTitleBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (isEditingTitle) {
+              closeTitleEditor();
+            } else {
+              openTitleEditor();
+            }
+          });
+        }
+
+        const titleForm = document.getElementById('titleForm');
+        if (titleForm) {
+          titleForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!ensureAuthenticated()) { return; }
+            const input = document.getElementById('titleInput');
+            if (!input) { return; }
+            const value = input.value.trim();
+            if (!value) {
+              alert('Please enter a project title.');
+              return;
+            }
+            const project = currentProject();
+            if (!project) { return; }
+            project.title = value;
+            touchProject(project);
+            closeTitleEditor();
+            saveAndRender();
+          });
+        }
+
+        const cancelTitleEdit = document.getElementById('cancelTitleEdit');
+        if (cancelTitleEdit) {
+          cancelTitleEdit.addEventListener('click', (event) => {
+            event.preventDefault();
+            closeTitleEditor();
+          });
+        }
+
+        document.querySelectorAll('[data-open]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const key = button.getAttribute('data-open');
+            const project = currentProject();
+            if (!project) {
+              alert('All saved projects are complete. Visit Completed Projects for final summaries.');
+              return;
+            }
+            const section = project.sections[key];
+            window.location.href = section?.file || `${key}.html`;
+          });
+        });
+
+        const toggle = document.getElementById('projectInfoToggle');
+        const menu = document.getElementById('projectInfoMenu');
+
+        const closeMenu = () => {
+          if (!menu) { return; }
+          if (!menu.hasAttribute('hidden')) {
+            menu.setAttribute('hidden', '');
+          }
+          if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+          }
+        };
+
+        if (toggle && menu) {
+          toggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (menu.hasAttribute('hidden')) {
+              menu.removeAttribute('hidden');
+              toggle.setAttribute('aria-expanded', 'true');
+            } else {
+              closeMenu();
+            }
+          });
+
+          menu.addEventListener('click', (event) => event.stopPropagation());
+          document.addEventListener('click', closeMenu);
+        }
+
+        document.querySelectorAll('[data-route]').forEach((item) => {
+          item.addEventListener('click', () => {
+            const route = item.getAttribute('data-route');
+            closeMenu();
+            if (route) {
+              window.location.href = route;
+            }
+          });
+        });
+
+        const projectSelect = document.getElementById('projectSelect');
+        if (projectSelect) {
+          projectSelect.addEventListener('change', () => {
+            if (projectSelect.disabled) { return; }
+            setActiveProject(state, projectSelect.value);
+            closeTitleEditor();
+            saveAndRender();
+          });
+        }
+
+        const pickerToggle = document.getElementById('sectionPickerToggle');
+        if (pickerToggle) {
+          pickerToggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            toggleSectionPicker();
+          });
+        }
+
+        const closePickerBtn = document.getElementById('closeSectionPicker');
+        if (closePickerBtn) {
+          closePickerBtn.addEventListener('click', () => {
+            closeSectionPicker();
+          });
+        }
+
+        const resetPickerBtn = document.getElementById('resetSections');
+        if (resetPickerBtn) {
+          resetPickerBtn.addEventListener('click', () => {
+            selectedSections = getBaseSectionKeys();
+            renderSectionPicker();
+            render();
+          });
+        }
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closeSectionPicker();
+            if (isEditingTitle) {
+              closeTitleEditor();
+            }
+          }
+        });
+
+        const loginButton = document.getElementById('loginButton');
+        if (loginButton) {
+          loginButton.addEventListener('click', () => {
+            if (!ensureAuthenticated()) { return; }
+            window.location.href = 'user_index.html';
+          });
+        }
+
+        const createGanttBtn = document.getElementById('createGanttChart');
+        if (createGanttBtn) {
+          createGanttBtn.addEventListener('click', () => {
+            if (!ensureAuthenticated()) { return; }
+            window.location.href = 'gantt_chart_creator.html';
+          });
+        }
+
+        const completedProjectsBtn = document.getElementById('viewCompletedProjects');
+        if (completedProjectsBtn) {
+          completedProjectsBtn.addEventListener('click', () => {
+            window.location.href = 'completed_project.html';
+          });
+        }
+
+        const viewLogsBtn = document.getElementById('viewLogs');
+        if (viewLogsBtn) {
+          viewLogsBtn.addEventListener('click', () => {
+            window.location.href = 'user_update_logs.html';
+          });
+        }
+
+        const emptyStateCompletedBtn = document.getElementById('emptyCompletedProjects');
+        if (emptyStateCompletedBtn) {
+          emptyStateCompletedBtn.addEventListener('click', () => {
+            window.location.href = 'completed_project.html';
+          });
+        }
+
+        renderSectionPicker();
+        closeSectionPicker();
+      };
+
+      // Initialize with async state loading
+      (async function initApp() {
+        state = await loadProjectState();
+        selectedSections = getBaseSectionKeys();
+        render();
+        guardPublicButtons();
+        wire();
+        showWelcomeMessage();
+      })();
+    })();
+  </script>
+
+  <!-- Auth state: toggle login / user+logout in topbar -->
+  <script>
+    (function () {
+      const logoutBtn   = document.getElementById('logoutButton');
+      const userWrap    = document.getElementById('topbarUser');
+      const usernameEl  = document.getElementById('topbarUsername');
+      const avatarEl    = document.getElementById('topbarAvatar');
+
+      function getInitials(name) {
+        return name.trim().split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase();
+      }
+
+      function updateAuthUI() {
+        if (window.ProjectData && window.ProjectData.isAuthenticated()) {
+          var name = window.ProjectData.getActiveUserName() || 'User';
+          if (usernameEl) { usernameEl.textContent = name; }
+          if (avatarEl)   { avatarEl.textContent   = getInitials(name); }
+          if (userWrap)   { userWrap.removeAttribute('hidden'); }
+        } else {
+          if (userWrap)   { userWrap.setAttribute('hidden', ''); }
+          if (usernameEl) { usernameEl.textContent = ''; }
+          if (avatarEl)   { avatarEl.textContent   = ''; }
+        }
+      }
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function () {
+          if (window.ProjectData && window.ProjectData.logout) {
+            window.ProjectData.logout();
+          }
+          window.location.href = 'login.html';
+        });
+      }
+
+      updateAuthUI();
+    })();
+  </script>
+  <script>
+    // Decorative: cursor spotlight on cards (only sets the --mx / --my CSS variables)
+    (function () {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const cards = document.getElementById('cards');
+      if (!cards) return;
+      cards.addEventListener('pointermove', (e) => {
+        const card = e.target.closest('.card');
+        if (!card) return;
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        card.style.setProperty('--my', `${e.clientY - r.top}px`);
+      });
+      cards.addEventListener('pointerout', (e) => {
+        const card = e.target.closest('.card');
+        if (card && !card.contains(e.relatedTarget)) {
+          card.style.removeProperty('--mx');
+          card.style.removeProperty('--my');
+        }
+      });
+    })();
+  </script>
+</body>

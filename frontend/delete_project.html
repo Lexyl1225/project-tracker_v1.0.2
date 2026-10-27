@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+	<title>Modify Projects</title>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--card: #111827;
+			--muted: #94a3b8;
+			--text: #e5e7eb;
+			--accent: #38bdf8;
+			--danger: #ef4444;
+			--shadow: 0 8px 24px rgba(0,0,0,0.35);
+			--radius: 14px;
+		}
+
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+			background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+			color: var(--text);
+			display: flex;
+			flex-direction: column;
+		}
+
+		header {
+			max-width: 1120px;
+			margin: 0 auto;
+			width: 100%;
+			padding: 40px 24px 20px;
+			display: flex;
+			justify-content: space-between;
+			gap: 16px;
+			flex-wrap: wrap;
+			align-items: center;
+		}
+
+		.title-block h1 {
+			margin: 0;
+			font-size: 1.8rem;
+			letter-spacing: 0.2px;
+		}
+
+		.title-block p {
+			margin: 6px 0 0;
+			color: var(--muted);
+		}
+
+		main {
+			max-width: 1120px;
+			width: 100%;
+			margin: 0 auto;
+			padding: 0 24px 60px;
+			flex: 1;
+		}
+
+		.panel {
+			background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+			border: 1px solid #1f2937;
+			border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			padding: 24px;
+			display: grid;
+			gap: 18px;
+		}
+
+		.panel h2 {
+			margin: 0;
+			font-size: 1.25rem;
+		}
+
+		.panel p {
+			margin: 0;
+			color: var(--muted);
+			font-size: 0.95rem;
+		}
+
+		.project-list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: grid;
+			gap: 12px;
+		}
+
+		.project-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 12px;
+			align-items: center;
+			padding: 14px 16px;
+			border-radius: 12px;
+			border: 1px solid #1f2937;
+			background: #0b1325;
+		}
+
+		.project-info {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.project-title {
+			font-size: 1rem;
+			font-weight: 600;
+			margin: 0;
+		}
+
+		.project-meta {
+			color: var(--muted);
+			font-size: 0.85rem;
+		}
+
+		.tag {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 0.75rem;
+			padding: 4px 8px;
+			border-radius: 999px;
+			border: 1px solid rgba(148, 163, 184, 0.4);
+			margin-left: 8px;
+		}
+
+		.actions {
+			display: flex;
+			gap: 8px;
+		}
+
+		.btn {
+			border: none;
+			border-radius: 10px;
+			padding: 10px 16px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: opacity 150ms ease;
+		}
+
+		.btn.secondary {
+			background: #0b1325;
+			color: var(--text);
+			border: 1px solid #1f2937;
+			box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+		}
+
+		.btn.danger {
+			background: var(--danger);
+			color: white;
+			box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
+		}
+
+		.btn:hover { opacity: 0.9; }
+		.btn:active { transform: translateY(1px); }
+
+		.empty {
+			margin: 0;
+			padding: 20px;
+			text-align: center;
+			border: 1px dashed #1f2937;
+			border-radius: 12px;
+			color: var(--muted);
+		}
+
+		@media print {
+			@page { margin: 0; }
+			body {
+				background: #fff !important;
+				color: #111 !important;
+				padding: 12mm 10mm !important;
+				-webkit-print-color-adjust: exact !important;
+				print-color-adjust: exact !important;
+			}
+			header,
+			body > header,
+			.btn {
+				display: none !important;
+			}
+			main {
+				max-width: 100% !important;
+				padding: 0 !important;
+				margin: 0 !important;
+			}
+		}
+	</style>
+</head>
+<body>
+	<header>
+		<div class="title-block">
+			<h1>Modify Saved Projects</h1>
+			<p>Remove projects you no longer need. Changes apply instantly.</p>
+		</div>
+		<button class="btn secondary" id="backButton" type="button">Return to Dashboard</button>
+	</header>
+
+	<main>
+		<section class="panel" aria-live="polite">
+			<div>
+				<h2>Saved Projects</h2>
+				<p>Select a project below and delete it from the dashboard.</p>
+			</div>
+			<ul class="project-list" id="projectList"></ul>
+			<p class="empty" id="emptyState" hidden>No saved projects yet.</p>
+		</section>
+	</main>
+
+	<script src="state.js"></script>
+	<!-- Auth Guard -->
+	<script>
+		if (!window.ProjectData || !window.ProjectData.isAuthenticated()) {
+			window.location.href = 'login.html';
+		}
+	</script>
+	<script>
+		(async function () {
+			console.log('Script started');
+			console.log('window.ProjectData:', window.ProjectData);
+			
+			if (!window.ProjectData) {
+				console.error('ERROR: window.ProjectData is not defined!');
+				alert('Error: Unable to load project data. Please refresh the page.');
+				return;
+			}
+			
+			const {
+				listProjects,
+				loadProjectState,
+				persistProjectState,
+				removeProject,
+				fmtDate,
+				getActiveProject
+			} = window.ProjectData;
+
+			let state = await loadProjectState();
+			console.log('Loaded state:', state);
+			console.log('Projects:', state?.projects);
+
+			const projectList = document.getElementById('projectList');
+			const emptyState = document.getElementById('emptyState');
+			const backButton = document.getElementById('backButton');
+
+			if (!projectList || !emptyState) {
+				console.error('Required elements not found');
+				return;
+			}
+
+			const renderProjects = () => {
+				const projects = listProjects(state);
+				console.log('Rendering projects:', projects);
+				
+				if (!projects || !projects.length) {
+					projectList.innerHTML = '';
+					emptyState.removeAttribute('hidden');
+					return;
+				}
+				
+				emptyState.setAttribute('hidden', '');
+				const active = getActiveProject(state);
+				projectList.innerHTML = projects.map((project) => {
+					const isActive = active && active.id === project.id;
+					const lastUpdate = fmtDate(new Date(project.lastUpdate));
+					return `
+						<li class="project-row">
+							<div class="project-info">
+								<p class="project-title">
+									${project.title}
+									${isActive ? '<span class="tag">Active</span>' : ''}
+								</p>
+								<span class="project-meta">Last update: ${lastUpdate}</span>
+							</div>
+							<div class="actions">
+								<button class="btn danger" data-delete="${project.id}">Delete</button>
+							</div>
+						</li>
+					`;
+				}).join('');
+
+				projects.forEach((project) => {
+					const deleteBtn = document.querySelector(`[data-delete="${project.id}"]`);
+					if (!deleteBtn) { return; }
+					deleteBtn.addEventListener('click', () => handleDelete(project.id));
+				});
+			};
+
+			const handleDelete = async (projectId) => {
+				const project = state.projects[projectId];
+				if (!project) { return; }
+				const confirmed = window.confirm(`Delete "${project.title}"? This cannot be undone.`);
+				if (!confirmed) { return; }
+				removeProject(state, projectId);
+				await persistProjectState(state);
+				renderProjects();
+			};
+
+			if (backButton) {
+				backButton.addEventListener('click', () => {
+					console.log('Back button clicked');
+					window.location.href = 'index.html';
+				});
+				console.log('Back button listener attached');
+			} else {
+				console.error('Back button not found');
+			}
+
+			renderProjects();
+		})();
+	</script>
+</body>
+</html>

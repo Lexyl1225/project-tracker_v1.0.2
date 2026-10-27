@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+  <title>Sign In — Project Tracker & Admin Console</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --border: #1e293b;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0284c7;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --radius: 18px;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 15% 0%, #0b122a 0%, var(--bg) 55%, #060b18 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 460px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .brand-badge {
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+      border-radius: 16px;
+      background: radial-gradient(circle at 50% 35%, rgba(56, 189, 248, 0.18), rgba(15, 23, 42, 0.85));
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45), 0 0 20px rgba(56, 189, 248, 0.14);
+      overflow: hidden;
+    }
+
+    .brand-logo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+      transition: transform 0.25s ease;
+    }
+
+    .brand-badge:hover .brand-logo {
+      transform: scale(1.05);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .role-presets {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0 20px;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.75);
+      color: #cbd5e1;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--accent);
+      color: #f8fafc;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .preset-btn strong {
+      display: block;
+      color: var(--accent);
+      font-size: 0.82rem;
+    }
+
+    form {
+      display: grid;
+      gap: 15px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.45px;
+      color: var(--muted);
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      background: #0b1222;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    .toggle-btn {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .options-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+      color: #082f49;
+      font-size: 0.96rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.28);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(56, 189, 248, 0.38);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .feedback {
+      min-height: 20px;
+      font-size: 0.88rem;
+      border-radius: 10px;
+      padding: 0;
+    }
+
+    .feedback.error {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      padding: 10px 12px;
+    }
+
+    .feedback.success {
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      padding: 10px 12px;
+    }
+
+    .footer-links {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.84rem;
+    }
+
+    .footer-links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <main class="login-card">
+    <div class="brand-row">
+      <div class="brand-badge">
+        <img src="images/project_tracker_25p.png?v=2" onerror="this.onerror=null;this.src='/images/project_tracker_25p.png';" alt="Project Tracker Logo" class="brand-logo" />
+      </div>
+      <div>
+        <h1>Project Tracker Sign In</h1>
+        <p class="subtitle">Role-Based Access Control </p>
+        <p class="subtitle">(Admin & Regular User)</p>
+      </div>
+    </div>
+    <!-- Remove this in production server -->
+   <!-- <div class="role-presets" aria-label="Quick fill role credentials">
+      <button type="button" class="preset-btn" id="fillAdminBtn">
+        <strong>🛡️ Fill Admin Demo</strong>
+        user: <code>admin</code> / pass: <code>Admin@123</code>
+      </button>
+      <button type="button" class="preset-btn" id="fillRegularBtn">
+        <strong>👷 Fill Regular Demo</strong>
+        user: <code>engineer</code> / pass: <code>User@123</code>
+      </button>
+   </div> -->
+
+    <form id="loginForm" autocomplete="off">
+      <div class="field">
+        <label for="usernameInput">Username or Email</label>
+        <input type="text" id="usernameInput" placeholder="e.g. admin or engineer" required />
+      </div>
+
+      <div class="field">
+        <label for="passwordInput">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="passwordInput" placeholder="Enter your password" required />
+          <button type="button" class="toggle-btn" id="togglePwdBtn">Show</button>
+        </div>
+      </div>
+
+      <div class="options-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="rememberMe" checked />
+          <span>Keep me signed in on this device</span>
+        </label>
+      </div>
+
+      <div class="feedback" id="loginFeedback" role="alert" aria-live="polite"></div>
+
+      <button type="submit" class="btn-primary" id="submitBtn">Sign In to Dashboard</button>
+    </form>
+
+    <div class="footer-links">
+      <a href="index.html" id="publicOverviewLink">← Public Overview</a>
+      <span style="color: var(--muted);">FastAPI + SQLite RBAC</span>
+    </div>
+  </main>
+
+  <script src="state.js"></script>
+  <script>
+    (function () {
+      const form = document.getElementById('loginForm');
+      const usernameInput = document.getElementById('usernameInput');
+      const passwordInput = document.getElementById('passwordInput');
+      const rememberMe = document.getElementById('rememberMe');
+      const submitBtn = document.getElementById('submitBtn');
+      const feedbackEl = document.getElementById('loginFeedback');
+
+      // Hide the link to the public homepage while an administrator has it turned off
+      fetch('api/settings/homepage', { cache: 'no-store' })
+        .then((res) => res.json())
+        .then((data) => {
+          const link = document.getElementById('publicOverviewLink');
+          if (link && data && data.visible === false) link.hidden = true;
+        })
+        .catch(() => {});
+
+      const params = new URLSearchParams(window.location.search);
+      const rawRedirect = params.get('redirect');
+      const redirectTarget = rawRedirect
+        ? decodeURIComponent(rawRedirect).replace(/\.php(\?|$)/, '.html$1')
+        : null;
+
+      document.getElementById('fillAdminBtn')?.addEventListener('click', () => {
+        usernameInput.value = 'admin';
+        passwordInput.value = 'Admin@123';
+      });
+
+      document.getElementById('fillRegularBtn')?.addEventListener('click', () => {
+        usernameInput.value = 'engineer';
+        passwordInput.value = 'User@123';
+      });
+
+      const wireToggle = (btnId, inputEl) => {
+        const btn = document.getElementById(btnId);
+        if (!btn || !inputEl) return;
+        btn.addEventListener('click', () => {
+          const isPwd = inputEl.type === 'password';
+          inputEl.type = isPwd ? 'text' : 'password';
+          btn.textContent = isPwd ? 'Hide' : 'Show';
+        });
+      };
+      wireToggle('togglePwdBtn', passwordInput);
+
+      const showFeedback = (msg, type) => {
+        feedbackEl.textContent = msg;
+        feedbackEl.className = 'feedback ' + (type || '');
+      };
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        showFeedback('', '');
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        const remember = rememberMe.checked;
+
+        if (!username || !password) {
+          showFeedback('Please enter your username and password.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verifying credentials...';
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok || !data.authenticated) {
+            throw new Error(data.error || 'Authentication failed. Check your username and password.');
+          }
+
+          window.ProjectData.setAuthSession({
+            token: data.token,
+            user: data.user,
+            remember,
+          });
+
+          showFeedback(data.message || 'Signed in! Redirecting...', 'success');
+          const defaultDest = data.user && data.user.role === 'admin'
+            ? 'admin_dashboard.html'
+            : 'user_index.html';
+          setTimeout(() => {
+            window.location.href = redirectTarget || defaultDest;
+          }, 350);
+        } catch (err) {
+          showFeedback(err.message || 'Sign-in failed.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In to Dashboard';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

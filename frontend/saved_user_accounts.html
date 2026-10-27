@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+	<title>Manage User Accounts</title>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--card: #111827;
+			--text: #e5e7eb;
+			--muted: #94a3b8;
+			--accent: #38bdf8;
+			--danger: #ef4444;
+			--success: #22c55e;
+			--shadow: 0 10px 40px rgba(0,0,0,0.35);
+			--radius: 16px;
+		}
+
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+			background: radial-gradient(1200px 600px at 15% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+			color: var(--text);
+			padding: 32px 16px 64px;
+			display: flex;
+			justify-content: center;
+		}
+
+		main {
+			width: min(960px, 100%);
+			display: grid;
+			gap: 24px;
+		}
+
+		header {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 16px;
+		}
+
+		h1 {
+			margin: 0;
+			font-size: 1.8rem;
+			letter-spacing: 0.2px;
+		}
+
+		.subtitle {
+			color: var(--muted);
+			margin-top: 6px;
+			font-size: 0.95rem;
+		}
+
+		.btn {
+			border: none;
+			border-radius: 999px;
+			padding: 12px 20px;
+			font-weight: 600;
+			cursor: pointer;
+			box-shadow: 0 8px 20px rgba(56, 189, 248, 0.35);
+			background: var(--accent);
+			color: #062a3a;
+		}
+
+		.btn.secondary {
+			background: transparent;
+			border: 1px solid #1f2937;
+			color: var(--text);
+			box-shadow: none;
+		}
+
+		.btn.danger {
+			background: var(--danger);
+			color: #fff;
+			box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
+			border: none;
+			padding: 8px 16px;
+		}
+
+		.panel {
+			background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+			border: 1px solid #1f2937;
+			border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			padding: 24px;
+		}
+
+		form {
+			display: grid;
+			gap: 14px;
+		}
+
+		.form-divider {
+			margin-top: 6px;
+			padding-top: 12px;
+			border-top: 1px solid #1f2937;
+			color: var(--muted);
+			font-size: 0.85rem;
+		}
+
+		.admin-modal {
+			position: fixed;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(2, 6, 23, 0.85);
+			padding: 24px;
+			z-index: 100;
+		}
+
+		.admin-modal[hidden] {
+			display: none;
+		}
+
+		.admin-modal__card {
+			width: min(360px, 100%);
+			background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)), var(--card);
+			border: 1px solid #1f2937;
+			border-radius: 18px;
+			box-shadow: var(--shadow);
+			padding: 24px;
+			display: grid;
+			gap: 14px;
+		}
+
+		.admin-modal__title {
+			margin: 0;
+			font-size: 1.2rem;
+		}
+
+		.admin-modal__actions {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.admin-modal__actions .btn {
+			flex: 1 1 120px;
+		}
+
+		label {
+			font-size: 0.9rem;
+			color: var(--muted);
+		}
+
+		input[type="text"],
+		input[type="password"] {
+			width: 100%;
+			padding: 12px;
+			border-radius: 10px;
+			border: 1px solid #1f2937;
+			background: rgba(15, 23, 42, 0.9);
+			color: var(--text);
+			font-size: 1rem;
+		}
+
+		.feedback {
+			min-height: 20px;
+			font-size: 0.95rem;
+			font-weight: 600;
+		}
+
+		.feedback.error { color: var(--danger); }
+		.feedback.success { color: var(--success); }
+
+		.accounts-list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: grid;
+			gap: 12px;
+		}
+
+		.account-item {
+			border: 1px solid #1f2937;
+			border-radius: 14px;
+			padding: 14px 16px;
+			background: rgba(15, 23, 42, 0.85);
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.account-name {
+			margin: 0;
+			font-size: 1.05rem;
+			font-weight: 600;
+		}
+
+		.account-note {
+			margin: 2px 0 0;
+			color: var(--muted);
+			font-size: 0.85rem;
+		}
+
+		.badge {
+			padding: 6px 12px;
+			border-radius: 999px;
+			border: 1px solid #1f2937;
+			background: rgba(56, 189, 248, 0.12);
+			color: var(--accent);
+			font-size: 0.8rem;
+			letter-spacing: 0.3px;
+		}
+
+		@media (max-width: 600px) {
+			.btn { width: 100%; }
+		}
+
+		@media print {
+			@page { margin: 0; }
+			body {
+				background: #fff !important;
+				color: #111 !important;
+				padding: 12mm 10mm !important;
+				-webkit-print-color-adjust: exact !important;
+				print-color-adjust: exact !important;
+			}
+			header,
+			main > header,
+			.btn {
+				display: none !important;
+			}
+			main {
+				max-width: 100% !important;
+				padding: 0 !important;
+				margin: 0 !important;
+			}
+		}
+	</style>
+</head>
+<body>
+	<main>
+		<header>
+			<div>
+				<h1>Saved User Accounts</h1>
+				<p class="subtitle">Create unique credentials that can sign in to the Project Dashboard.</p>
+			</div>
+			<button class="btn secondary" id="backToDashboard">Return to Dashboard</button>
+		</header>
+
+		<section class="panel" aria-label="Add user account">
+			<form id="accountForm" autocomplete="off">
+				<div>
+					<label for="newUsername">Username</label>
+					<input type="text" id="newUsername" placeholder="Enter a unique username" required />
+				</div>
+				<div>
+					<label for="newPassword">Password</label>
+					<input type="password" id="newPassword" placeholder="Create a password" required />
+				</div>
+				<p class="form-divider">Administrator approval is required; you will be prompted before changes are saved.</p>
+				<button class="btn" type="submit">Save Account</button>
+				<div class="feedback" id="accountFeedback" aria-live="polite"></div>
+			</form>
+		</section>
+
+		<section class="panel" aria-label="Existing accounts">
+			<h2 style="margin-top:0">Existing Accounts</h2>
+			<p class="subtitle" style="margin:0 0 12px">Default administrator credentials are hidden from this view.</p>
+			<button class="btn" id="migrateAccountsBtn" style="margin-bottom: 16px;">Save Accounts to Database</button>
+			<ul class="accounts-list" id="accountsList"></ul>
+		</section>
+	</main>
+
+	<div class="admin-modal" id="adminModal" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle" hidden>
+		<div class="admin-modal__card">
+			<h3 class="admin-modal__title" id="adminModalTitle">Admin Approval Required</h3>
+			<p id="adminModalMessage">Enter administrator credentials to continue.</p>
+			<form id="adminApproveForm" autocomplete="off">
+				<div>
+					<label for="modalAdminUsername">Admin Username</label>
+					<input type="text" id="modalAdminUsername" placeholder="Enter admin username" required />
+				</div>
+				<div>
+					<label for="modalAdminPassword">Admin Password</label>
+					<input type="password" id="modalAdminPassword" placeholder="Enter admin password" required />
+				</div>
+				<div class="feedback" id="adminModalFeedback" aria-live="polite"></div>
+				<div class="admin-modal__actions">
+					<button type="button" class="btn secondary" id="adminModalCancel">Cancel</button>
+					<button type="submit" class="btn">Verify</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script src="state.js"></script>
+	<script>
+		(function () {
+			const USERS_KEY = 'projectDashboardAccounts';
+			const DEFAULT_SECRET_HASH = '3a6ae36613f5be90056a9419e62f759145ba372808045f7ec0c457ea4a3fd3ad';
+
+			const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({
+				'&': '&amp;',
+				'<': '&lt;',
+				'>': '&gt;',
+				'"': '&quot;',
+				"'": '&#39;'
+			}[char] || char));
+
+			const toHex = (buffer) => Array.from(new Uint8Array(buffer)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
+			const fallbackHash = (value = '') => {
+				let hash = 0;
+				for (let i = 0; i < value.length; i += 1) {
+					hash = ((hash << 5) - hash) + value.charCodeAt(i);
+					hash |= 0;
+				}
+				return hash.toString(16);
+			};
+
+			const digestText = async (value = '') => {
+				if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+					const encoder = new TextEncoder();
+					const data = encoder.encode(value);
+					const hash = await window.crypto.subtle.digest('SHA-256', data);
+					return toHex(hash);
+				}
+				return fallbackHash(value);
+			};
+
+			const normalizeUsername = (value = '') => value.trim().toLowerCase();
+			const buildSecretHash = (username, password) => digestText(`${normalizeUsername(username)}:${password}`);
+
+			const loadAccounts = async () => {
+				try {
+					if (window.ProjectData && window.ProjectData.apiFetch) {
+						const res = await window.ProjectData.apiFetch('/api/user_accounts');
+						if (res.ok) {
+							const data = await res.json();
+							if (data && Array.isArray(data.accounts)) {
+								return data.accounts;
+							}
+						}
+					}
+					const raw = window.localStorage && window.localStorage.getItem(USERS_KEY);
+					const parsed = raw ? JSON.parse(raw) : [];
+					return Array.isArray(parsed) ? parsed : [];
+				} catch (error) {
+					console.error('Failed to load accounts:', error);
+					return [];
+				}
+			};
+
+			const saveAccounts = async (accounts) => {
+				try {
+					if (window.ProjectData && window.ProjectData.apiFetch) {
+						await window.ProjectData.apiFetch('/api/user_accounts', {
+							method: 'POST',
+							body: JSON.stringify({ accounts })
+						});
+					}
+					window.localStorage && window.localStorage.setItem(USERS_KEY, JSON.stringify(accounts));
+				} catch (error) {
+					console.error('Failed to save accounts:', error);
+				}
+			};
+
+			const sanitizeAccounts = async (records) => {
+				let changed = false;
+				const sanitized = [];
+				for (const record of records) {
+					const username = (record?.username || '').trim();
+					if (!username) { continue; }
+					if (record.system) {
+						changed = true;
+						continue;
+					}
+					if (record.secretHash) {
+						sanitized.push({ username, secretHash: record.secretHash });
+						continue;
+					}
+					if (record.password) {
+						const secretHash = await buildSecretHash(username, record.password);
+						sanitized.push({ username, secretHash });
+						changed = true;
+					}
+				}
+				if (changed) {
+					await saveAccounts(sanitized);
+				}
+				return sanitized;
+			};
+
+			const listEl = document.getElementById('accountsList');
+			const form = document.getElementById('accountForm');
+			const feedbackEl = document.getElementById('accountFeedback');
+			const backBtn = document.getElementById('backToDashboard');
+			const state = { accounts: [] };
+
+			const adminModal = document.getElementById('adminModal');
+			const adminModalForm = document.getElementById('adminApproveForm');
+			const adminModalMessage = document.getElementById('adminModalMessage');
+			const adminModalFeedback = document.getElementById('adminModalFeedback');
+			const adminModalCancel = document.getElementById('adminModalCancel');
+			const modalAdminUsername = document.getElementById('modalAdminUsername');
+			const modalAdminPassword = document.getElementById('modalAdminPassword');
+			let resolveAdminPromise = null;
+			let rejectAdminPromise = null;
+
+			const renderAccounts = () => {
+				if (!listEl) { return; }
+				if (!state.accounts.length) {
+					listEl.innerHTML = '<li class="account-item"><div><p class="account-name">No custom accounts saved.</p><p class="account-note">Create one above to replace the hidden default admin credentials.</p></div></li>';
+					return;
+				}
+				listEl.innerHTML = state.accounts.map((account) => {
+					const safeName = escapeHtml(account.username || '');
+					return `
+						<li class="account-item">
+							<div>
+								<p class="account-name">${safeName}</p>
+								<p class="account-note">Created via this page</p>
+							</div>
+							<button class="btn danger" type="button" data-delete="${encodeURIComponent(account.username)}">Delete</button>
+						</li>
+					`;
+				}).join('');
+			};
+
+			const setFeedback = (message, type) => {
+				if (!feedbackEl) { return; }
+				feedbackEl.textContent = message;
+				feedbackEl.classList.remove('error', 'success');
+				if (type) {
+					feedbackEl.classList.add(type);
+				}
+			};
+
+			const setModalFeedback = (message, type) => {
+				if (!adminModalFeedback) { return; }
+				adminModalFeedback.textContent = message;
+				adminModalFeedback.classList.remove('error', 'success');
+				if (type) {
+					adminModalFeedback.classList.add(type);
+				}
+			};
+
+			const resetAdminModal = () => {
+				setModalFeedback('', null);
+				if (adminModalForm) {
+					adminModalForm.reset();
+				}
+			};
+
+			const closeAdminModal = () => {
+				if (!adminModal) { return; }
+				adminModal.setAttribute('hidden', '');
+				resetAdminModal();
+				resolveAdminPromise = null;
+				rejectAdminPromise = null;
+			};
+
+			const requestAdminApproval = (message) => {
+				if (!adminModal || !adminModalMessage) {
+					return Promise.reject(new Error('Admin modal unavailable'));
+				}
+				resetAdminModal();
+				adminModalMessage.textContent = message || 'Administrator approval is required to continue.';
+				adminModal.removeAttribute('hidden');
+				window.requestAnimationFrame(() => {
+					modalAdminUsername?.focus();
+				});
+				return new Promise((resolve, reject) => {
+					resolveAdminPromise = resolve;
+					rejectAdminPromise = reject;
+				});
+			};
+
+			const usernameExists = (username) => {
+				const target = normalizeUsername(username);
+				return state.accounts.some((account) => account.username && normalizeUsername(account.username) === target);
+			};
+
+			const refreshAccounts = async () => {
+				state.accounts = await sanitizeAccounts(await loadAccounts());
+			};
+
+			const verifyAdminCredentials = async (username, password) => {
+				if (!username || !password) {
+					return false;
+				}
+				await refreshAccounts();
+				const secretHash = await buildSecretHash(username, password);
+				const normalized = normalizeUsername(username);
+				const match = state.accounts.find((account) => account.username && normalizeUsername(account.username) === normalized && account.secretHash === secretHash);
+				if (match) {
+					return true;
+				}
+				return secretHash === DEFAULT_SECRET_HASH;
+			};
+
+			const initialize = async () => {
+				await refreshAccounts();
+				renderAccounts();
+			};
+
+			if (adminModalForm) {
+				adminModalForm.addEventListener('submit', async (event) => {
+					event.preventDefault();
+					const username = modalAdminUsername?.value.trim() || '';
+					const password = modalAdminPassword?.value || '';
+					if (!username || !password) {
+						setModalFeedback('Enter admin credentials to continue.', 'error');
+						return;
+					}
+					const isValid = await verifyAdminCredentials(username, password);
+					if (isValid) {
+						const resolver = resolveAdminPromise;
+						closeAdminModal();
+						resolver?.(true);
+					} else {
+						setModalFeedback('Invalid admin credentials. Try again.', 'error');
+					}
+				});
+			}
+
+			const cancelAdminModal = () => {
+				const rejecter = rejectAdminPromise;
+				closeAdminModal();
+				rejecter?.(new Error('cancelled'));
+			};
+
+			if (adminModalCancel) {
+				adminModalCancel.addEventListener('click', () => {
+					cancelAdminModal();
+				});
+			}
+
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'Escape' && adminModal && !adminModal.hasAttribute('hidden')) {
+					cancelAdminModal();
+				}
+			});
+
+			if (form) {
+				form.addEventListener('submit', async (event) => {
+					event.preventDefault();
+					const usernameInput = document.getElementById('newUsername');
+					const passwordInput = document.getElementById('newPassword');
+					const username = usernameInput?.value.trim() || '';
+					const password = passwordInput?.value || '';
+					await refreshAccounts();
+
+					if (!username || !password) {
+						setFeedback('Provide both a username and password.', 'error');
+						return;
+					}
+
+					if (usernameExists(username)) {
+						setFeedback('That username already exists. Choose another.', 'error');
+						return;
+					}
+
+					try {
+						await requestAdminApproval(`Admin approval is required to add "${username}".`);
+					} catch (error) {
+						setFeedback('Admin approval cancelled.', 'error');
+						return;
+					}
+
+					const secretHash = await buildSecretHash(username, password);
+					state.accounts.push({ username, secretHash });
+					await saveAccounts(state.accounts);
+					renderAccounts();
+					setFeedback(`User "${username}" saved successfully.`, 'success');
+					if (usernameInput) { usernameInput.value = ''; }
+					if (passwordInput) { passwordInput.value = ''; }
+				});
+			}
+
+			if (listEl) {
+				listEl.addEventListener('click', async (event) => {
+					const button = event.target.closest('[data-delete]');
+					if (!button) { return; }
+					const encoded = button.getAttribute('data-delete');
+					const username = encoded ? decodeURIComponent(encoded) : '';
+					if (!username) { return; }
+					await refreshAccounts();
+					try {
+						await requestAdminApproval(`Admin approval is required to delete "${username}".`);
+					} catch (error) {
+						setFeedback('Admin approval cancelled.', 'error');
+						return;
+					}
+					const target = normalizeUsername(username);
+					state.accounts = state.accounts.filter((account) => normalizeUsername(account.username) !== target);
+					await saveAccounts(state.accounts);
+					renderAccounts();
+					setFeedback(`User "${username}" was removed.`, 'success');
+				});
+			}
+
+			if (backBtn) {
+				backBtn.addEventListener('click', () => {
+					window.location.href = 'index.html';
+				});
+			}
+
+			const migrateBtn = document.getElementById('migrateAccountsBtn');
+			if (migrateBtn) {
+				migrateBtn.addEventListener('click', () => {
+					saveAccounts(state.accounts).then(() => setFeedback('Accounts synced to SQLite database.', 'success'));
+				});
+			}
+
+			initialize();
+		})();
+	</script>
+</body>
+</html>

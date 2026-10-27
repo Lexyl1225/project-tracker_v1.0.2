@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" type="image/x-icon" href="images/tomshead.ico">
+	<title>Plumbing Manage Sub-items — Project Developments</title>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--card: #111827;
+			--muted: #94a3b8;
+			--text: #e5e7eb;
+			--accent: #38bdf8;
+			--success: #22c55e;
+			--warning: #f59e0b;
+			--danger: #ef4444;
+			--bar-bg: #1f2937;
+			--bar-fill: #60a5fa;
+			--shadow: 0 8px 24px rgba(0,0,0,0.35);
+			--radius: 14px;
+		}
+
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Segoe UI Emoji", "Segoe UI Symbol";
+			background: radial-gradient(1200px 600px at 20% 0%, #0b122a 0%, var(--bg) 60%, #0a1023 100%);
+			color: var(--text);
+		}
+
+		.section-header {
+			max-width: 1120px;
+			margin: 0 auto;
+			padding: 36px 24px 12px;
+			display: flex;
+			flex-wrap: wrap;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 16px;
+		}
+		.section-header h1 {
+			margin: 4px 0;
+			font-size: 2rem;
+		}
+		.eyebrow {
+			text-transform: uppercase;
+			letter-spacing: 0.15em;
+			font-size: 0.75rem;
+			color: var(--muted);
+			margin: 0 0 6px;
+		}
+		.subtitle {
+			color: var(--muted);
+			font-size: 0.95rem;
+			margin: 0;
+		}
+
+		.toolbar.detail {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			align-items: center;
+		}
+		.pill {
+			background: #0b1325;
+			border: 1px solid #1e293b;
+			color: var(--muted);
+			padding: 8px 12px;
+			border-radius: 999px;
+			font-size: 0.9rem;
+		}
+		.btn {
+			background: var(--accent);
+			color: #062a3a;
+			border: none;
+			padding: 10px 16px;
+			border-radius: 10px;
+			font-weight: 600;
+			cursor: pointer;
+			box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.btn.secondary {
+			background: #0b1325;
+			color: var(--text);
+			border: 1px solid #1f2937;
+			box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+		}
+		.btn:active { transform: translateY(1px); }
+
+		main {
+			max-width: 1120px;
+			margin: 0 auto;
+			padding: 0 24px 60px;
+		}
+
+		.summary-panel {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+			gap: 12px;
+			margin-bottom: 24px;
+		}
+		.summary-card {
+			background: rgba(15, 23, 42, 0.7);
+			border: 1px solid #1f2937;
+			border-radius: var(--radius);
+			padding: 16px;
+			box-shadow: var(--shadow);
+			display: grid;
+			gap: 6px;
+		}
+		.summary-card .label {
+			color: var(--muted);
+			font-size: 0.85rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+		}
+		.summary-card .value {
+			font-size: 1.8rem;
+			font-weight: 700;
+			color: #93c5fd;
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: repeat(12, 1fr);
+			gap: 16px;
+		}
+		@media (max-width: 960px) {
+			.grid { grid-template-columns: repeat(6, 1fr); }
+		}
+		@media (max-width: 640px) {
+			.grid { grid-template-columns: repeat(1, 1fr); }
+		}
+
+		.card {
+			grid-column: span 6;
+			background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--card);
+			border: 1px solid #1f2937;
+			border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			padding: 18px;
+			display: grid;
+			gap: 14px;
+			position: relative;
+			overflow: hidden;
+		}
+		@media (max-width: 960px) {
+			.card { grid-column: span 6; }
+		}
+		@media (max-width: 640px) {
+			.card { grid-column: span 1; }
+		}
+
+		.card header {
+			padding: 0;
+			margin: 0;
+			display: flex; align-items: center; justify-content: space-between;
+		}
+		.title {
+			font-weight: 700; letter-spacing: 0.2px;
+		}
+		.status {
+			font-size: 0.8rem;
+			padding: 6px 10px;
+			border-radius: 999px;
+			border: 1px solid #1f2937;
+		}
+		.status.ontrack { background: rgba(34, 197, 94, 0.12); color: var(--success); }
+		.status.atrisk  { background: rgba(245, 158, 11, 0.12); color: var(--warning); }
+		.status.delayed { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+
+		.progress-wrap { display: grid; gap: 8px; }
+		.progress-bar {
+			height: 11px;
+			background: var(--bar-bg);
+			border-radius: 999px;
+			overflow: hidden;
+			border: 1px solid #1f2937;
+		}
+		.progress-fill {
+			height: 100%;
+			width: 0%;
+			border-radius: 999px;
+			background: linear-gradient(90deg, #60a5fa, #22d3ee);
+			transition: width 500ms ease;
+		}
+		.progress-value {
+			display: flex; justify-content: space-between; align-items: baseline;
+			font-size: 0.95rem;
+		}
+		.progress-value .percent { font-weight: 800; color: #93c5fd; }
+		.progress-value .label   { color: var(--muted); }
+
+		.controls {
+			display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+		}
+		.input {
+			width: 100%;
+			padding: 10px 12px;
+			background: #0b1325;
+			color: var(--text);
+			border: 1px solid #1f2937;
+			border-radius: 10px;
+			outline: none;
+		}
+		.footnote { color: var(--muted); font-size: 0.85rem; }
+
+		.card::after {
+			content: "";
+			position: absolute; inset: -80px -80px auto auto;
+			width: 220px; height: 220px;
+			background: radial-gradient(120px 120px at 50% 50%, rgba(56,189,248,0.18), transparent 70%);
+			transform: rotate(15deg);
+			pointer-events: none;
+		}
+        .manager-controls {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #1f2937;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.manager-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.manager-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  margin: 12px 0 0;
+}
+.track-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+	margin-bottom: 10px;
+}
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.chip-accent {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+.chip-muted {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+}
+.btn.ghost {
+  background: transparent;
+  border: 1px dashed #1f2937;
+  color: var(--text);
+  box-shadow: none;
+}
+
+/* ---- Add / Delete Sub-item Modals ---- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 500;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+.modal-box {
+  background: var(--card);
+  border: 1px solid #1f2937;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  display: grid;
+  gap: 16px;
+}
+.modal-box h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.modal-field {
+  display: grid;
+  gap: 6px;
+}
+.modal-field label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.modal-field input,
+.modal-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: #0b1325;
+  color: var(--text);
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+.modal-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.delete-list {
+  max-height: 280px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+}
+.delete-list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color 0.15s;
+}
+.delete-list label:hover {
+  border-color: var(--danger);
+}
+.delete-list input[type="radio"] {
+  accent-color: var(--danger);
+  width: 16px;
+  height: 16px;
+}
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+}
+
+@media print {
+  @page { margin: 0; }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    padding: 12mm 10mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body > header,
+  header.section-header,
+  .section-header,
+  .btn {
+    display: none !important;
+  }
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+	</style>
+</head>
+<body>
+	<header class="section-header">
+		<div>
+			<p class="eyebrow" id="projectName">Project Developments</p>
+			<h1 id="sectionTitle">Plumbing Section Manager</h1>
+			<p class="subtitle" id="sectionTagline">Water supply, drainage, and fixtures installation progress.</p>
+		</div>
+		<div class="toolbar detail">
+			<span class="pill">Last update: <span id="lastUpdate">—</span></span>
+			<a class="btn secondary" href="index.html">Back to Overview</a>
+		</div>
+	</header>
+
+	<main>
+		<section class="summary-panel">
+			<div class="summary-card">
+				<span class="label">Overall progress</span>
+				<span class="value" id="sectionPercent">0%</span>
+			</div>
+			<div class="summary-card">
+				<span class="label">Tracked sub-items</span>
+				<span class="value" id="sectionCount">0</span>
+			</div>
+		</section>
+        <section class="manager-controls">
+  <div class="manager-row">
+    <label class="toggle">
+      <input type="checkbox" id="toggleHideUntracked" />
+      <span>Hide untracked sub-items</span>
+    </label>
+    <p class="manager-hint">
+      Untracked entries stay in your template but won’t be cloned into new projects.
+    </p>
+  </div>
+  <div class="manager-row" style="margin-top:12px;">
+    <button class="btn" id="addSubItemBtn">+ Add Sub-item</button>
+    <button class="btn danger" id="deleteSubItemBtn">− Delete Sub-item</button>
+  </div>
+</section>
+
+<!-- Add Sub-item Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <h2>Add New Sub-item</h2>
+    <div class="modal-field">
+      <label for="newItemId">ID (unique, lowercase, no spaces)</label>
+      <input type="text" id="newItemId" placeholder="e.g. plumb-task-1" autocomplete="off" />
+    </div>
+    <div class="modal-field">
+      <label for="newItemTitle">Title</label>
+      <input type="text" id="newItemTitle" placeholder="e.g. Booster Pump Installation" autocomplete="off" />
+    </div>
+    <div class="modal-field">
+      <label for="newItemNotes">Notes</label>
+      <textarea id="newItemNotes" placeholder="Brief description of the sub-item."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="addModalCancel">Cancel</button>
+      <button class="btn" id="addModalConfirm">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Sub-item Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <h2>Delete Sub-item</h2>
+    <p style="color:var(--muted);font-size:0.9rem;">Select a sub-item to remove permanently.</p>
+    <div class="delete-list" id="deleteList"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="deleteModalCancel">Cancel</button>
+      <button class="btn danger" id="deleteModalConfirm">Delete</button>
+    </div>
+  </div>
+</div>
+<p class="empty-state" id="emptyItems" hidden>No sub-items match this filter.</p>
+
+
+		<section class="grid" id="itemsGrid"></section>
+	</main>
+
+	<script src="state.js"></script>
+	<!-- Auth Guard -->
+	<script>
+		if (!window.ProjectData || !window.ProjectData.isAuthenticated()) {
+			window.location.href = 'login.html';
+		}
+	</script>
+	<script>
+		(function () {
+			const SECTION_KEY = 'plumbing';
+			const HEADLINE = 'Plumbing Section Manager';
+			const TAGLINE = 'Water supply, drainage, and fixtures installation progress.';
+
+			const {
+				loadProjectState,
+				persistProjectState,
+				SECTION_DEFS,
+				clamp,
+				fmtDate,
+				statusClass,
+				getActiveProject,
+				touchProject,
+				appendUpdateLog,
+				getActiveUserName
+			} = window.ProjectData;
+
+		(async function() {
+			let state = await loadProjectState();
+			let project = getActiveProject(state);
+			if (!project) {
+				state = await loadProjectState();
+				project = getActiveProject(state);
+			}
+			if (!project) { return; }
+
+			if (!project.sections[SECTION_KEY]) {
+				project.sections[SECTION_KEY] = {
+					...SECTION_DEFS[SECTION_KEY],
+					items: SECTION_DEFS[SECTION_KEY].items.map((item) => ({ ...item }))
+				};
+			}
+
+			const section = project.sections[SECTION_KEY];
+			const grid = document.getElementById('itemsGrid');
+
+			const HIDE_PREF_KEY = 'plumbingManageHideUntracked';
+			const hideToggle = document.getElementById('toggleHideUntracked');
+			const emptyState = document.getElementById('emptyItems');
+
+			const readHidePref = () => {
+				try {
+					const stored = window.localStorage.getItem(HIDE_PREF_KEY);
+					return stored === null ? true : stored === '1';
+				}
+				catch (error) { return true; }
+			};
+			const persistHidePref = (value) => {
+				try { window.localStorage.setItem(HIDE_PREF_KEY, value ? '1' : '0'); }
+				catch (error) { /* ignore */ }
+			};
+
+			let hideUntracked = readHidePref();
+			if (hideToggle) hideToggle.checked = hideUntracked;
+
+			const getVisibleItems = () =>
+				hideUntracked ? section.items.filter((item) => item.tracked !== false) : section.items;
+
+			const buildCards = () => {
+				if (!grid) { return; }
+				const visibleItems = getVisibleItems();
+				if (!visibleItems.length) {
+					grid.innerHTML = '';
+					emptyState?.removeAttribute('hidden');
+					return;
+				}
+				emptyState?.setAttribute('hidden', '');
+				grid.innerHTML = visibleItems.map((item) => `
+					<article class="card" data-item="${item.id}">
+						<header>
+							<div class="title">${item.title}</div>
+							<div class="status" id="status-${item.id}">—</div>
+						</header>
+						<div class="track-row">
+							<span class="chip ${item.tracked === false ? 'chip-muted' : 'chip-accent'}" id="chip-${item.id}">
+								${item.tracked === false ? 'Untracked' : 'Tracked'}
+							</span>
+							<button type="button" class="btn ghost" data-track="${item.id}">
+								${item.tracked === false ? 'Mark as tracked' : 'Hide this sub-item'}
+							</button>
+						</div>
+						<div class="progress-wrap">
+							<div class="progress-value">
+								<span class="label">Completeness</span>
+								<span class="percent" id="percent-${item.id}">0%</span>
+							</div>
+							<div class="progress-bar" aria-label="${item.title} progress">
+								<div class="progress-fill" id="bar-${item.id}"></div>
+							</div>
+						</div>
+						<div class="controls">
+							<input class="input" type="number" min="0" max="100" step="1"
+								placeholder="Set % (0–100)" id="input-${item.id}" />
+							<button type="button" class="btn secondary" data-update="${item.id}">Update</button>
+						</div>
+						<div class="footnote">${item.notes || ''}</div>
+					</article>
+				`).join('');
+			};
+
+			const computeTrackedPercent = () => {
+				const trackedItems = section.items.filter((item) => item.tracked !== false);
+				if (!trackedItems.length) { return 0; }
+				const total = trackedItems.reduce((sum, item) => sum + clamp(Number(item.percent) || 0, 0, 100), 0);
+				return Math.round(total / trackedItems.length);
+			};
+
+			const toggleTracked = async (id) => {
+				const target = section.items.find((item) => item.id === id);
+				if (!target) { return; }
+
+				if (target.tracked !== false) {
+					if (!window.confirm('Hide this sub-item from future projects?')) {
+						return;
+					}
+					target.tracked = false;
+					hideUntracked = true;
+					if (hideToggle) {
+						hideToggle.checked = true;
+					}
+					persistHidePref(true);
+				} else {
+					target.tracked = true;
+				}
+
+				touchProject(project);
+				await persistProjectState(state);
+				buildCards();
+				render();
+			};
+
+			hideToggle?.addEventListener('change', () => {
+				hideUntracked = hideToggle.checked;
+				persistHidePref(hideUntracked);
+				buildCards();
+				render();
+			});
+
+			/* ── Add Sub-item ── */
+			const addModal = document.getElementById('addModal');
+			const addBtn = document.getElementById('addSubItemBtn');
+			const addCancel = document.getElementById('addModalCancel');
+			const addConfirm = document.getElementById('addModalConfirm');
+
+			const openAddModal = () => {
+				document.getElementById('newItemId').value = '';
+				document.getElementById('newItemTitle').value = '';
+				document.getElementById('newItemNotes').value = '';
+				addModal.classList.add('active');
+			};
+			const closeAddModal = () => addModal.classList.remove('active');
+
+			addBtn?.addEventListener('click', openAddModal);
+			addCancel?.addEventListener('click', closeAddModal);
+			addModal?.addEventListener('click', (e) => { if (e.target === addModal) closeAddModal(); });
+
+			addConfirm?.addEventListener('click', async () => {
+				const rawId = document.getElementById('newItemId').value.trim();
+				const title = document.getElementById('newItemTitle').value.trim();
+				const notes = document.getElementById('newItemNotes').value.trim();
+
+				if (!rawId || !title) {
+					alert('ID and Title are required.');
+					return;
+				}
+				// Sanitise ID: lowercase, replace spaces with hyphens
+				const id = rawId.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-_]/g, '');
+				if (section.items.some((item) => item.id === id)) {
+					alert('A sub-item with this ID already exists. Please choose a different ID.');
+					return;
+				}
+
+				// 1. Write to state.js on disk
+				try {
+					const apiKey = window.ProjectData.getApiKey();
+					const sessionToken = window.ProjectData.getSessionToken ? window.ProjectData.getSessionToken() : '';
+					const resp = await fetch('api/modify_section_defs', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							...(apiKey ? { 'X-API-Key': apiKey } : {}),
+							...(sessionToken ? { 'X-Session-Token': sessionToken, 'Authorization': `Bearer ${sessionToken}` } : {})
+						},
+						body: JSON.stringify({
+							action: 'add',
+							section: SECTION_KEY,
+							item: { id, title, notes: notes || '' }
+						})
+					});
+					if (!resp.ok) {
+						const err = await resp.json().catch(() => ({}));
+						throw new Error(err.error || 'Server error ' + resp.status);
+					}
+				} catch (e) {
+					console.error('Failed to update state.js:', e);
+					alert('Failed to save to template file: ' + e.message);
+					return;
+				}
+
+				// 2. Update runtime state + DB
+				section.items.push({ id, title, percent: 0, notes: notes || '' });
+				touchProject(project);
+				appendUpdateLog({
+					user: getActiveUserName(),
+					project: project.title || 'Project Developments',
+					section: SECTION_DEFS[SECTION_KEY]?.title || SECTION_KEY,
+					item: title + ' (added)'
+				});
+				await persistProjectState(state);
+				closeAddModal();
+				buildCards();
+				render();
+			});
+
+			/* ── Delete Sub-item ── */
+			const deleteModal = document.getElementById('deleteModal');
+			const deleteBtn = document.getElementById('deleteSubItemBtn');
+			const deleteCancel = document.getElementById('deleteModalCancel');
+			const deleteConfirm = document.getElementById('deleteModalConfirm');
+			const deleteList = document.getElementById('deleteList');
+
+			const openDeleteModal = () => {
+				if (!section.items.length) {
+					alert('No sub-items to delete.');
+					return;
+				}
+				deleteList.innerHTML = section.items.map((item) => `
+					<label>
+						<input type="radio" name="deleteItem" value="${item.id}" />
+						<span><strong>${item.title}</strong> <span style="color:var(--muted);">(${item.id})</span></span>
+					</label>
+				`).join('');
+				deleteModal.classList.add('active');
+			};
+			const closeDeleteModal = () => deleteModal.classList.remove('active');
+
+			deleteBtn?.addEventListener('click', openDeleteModal);
+			deleteCancel?.addEventListener('click', closeDeleteModal);
+			deleteModal?.addEventListener('click', (e) => { if (e.target === deleteModal) closeDeleteModal(); });
+
+			deleteConfirm?.addEventListener('click', async () => {
+				const selected = deleteList.querySelector('input[name="deleteItem"]:checked');
+				if (!selected) {
+					alert('Please select a sub-item to delete.');
+					return;
+				}
+				const id = selected.value;
+				const idx = section.items.findIndex((item) => item.id === id);
+				if (idx === -1) { return; }
+
+				const itemTitle = section.items[idx].title;
+				if (!window.confirm(`Are you sure you want to delete "${itemTitle}"? This cannot be undone.`)) {
+					return;
+				}
+
+				// 1. Remove from state.js on disk
+				try {
+					const apiKey = window.ProjectData.getApiKey();
+					const sessionToken = window.ProjectData.getSessionToken ? window.ProjectData.getSessionToken() : '';
+					const resp = await fetch('api/modify_section_defs', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							...(apiKey ? { 'X-API-Key': apiKey } : {}),
+							...(sessionToken ? { 'X-Session-Token': sessionToken, 'Authorization': `Bearer ${sessionToken}` } : {})
+						},
+						body: JSON.stringify({
+							action: 'delete',
+							section: SECTION_KEY,
+							itemId: id
+						})
+					});
+					if (!resp.ok) {
+						const err = await resp.json().catch(() => ({}));
+						throw new Error(err.error || 'Server error ' + resp.status);
+					}
+				} catch (e) {
+					console.error('Failed to update state.js:', e);
+					alert('Failed to save to template file: ' + e.message);
+					return;
+				}
+
+				// 2. Update runtime state + DB
+				section.items.splice(idx, 1);
+				touchProject(project);
+				appendUpdateLog({
+					user: getActiveUserName(),
+					project: project.title || 'Project Developments',
+					section: SECTION_DEFS[SECTION_KEY]?.title || SECTION_KEY,
+					item: itemTitle + ' (deleted)'
+				});
+				await persistProjectState(state);
+				closeDeleteModal();
+				buildCards();
+				render();
+			});
+
+			const render = () => {
+				section.items.forEach((item) => {
+					const pct = clamp(Number(item.percent) || 0, 0, 100);
+					const bar = document.getElementById(`bar-${item.id}`);
+					const label = document.getElementById(`percent-${item.id}`);
+					const status = document.getElementById(`status-${item.id}`);
+					const input = document.getElementById(`input-${item.id}`);
+
+					if (bar) { bar.style.width = pct + '%'; }
+					if (label) { label.textContent = pct + '%'; }
+					if (status) {
+						const st = statusClass(pct);
+						status.textContent = st.text;
+						status.classList.remove('ontrack', 'atrisk', 'delayed');
+						status.classList.add(st.cls);
+					}
+					if (input && document.activeElement !== input) {
+						input.value = pct;
+					}
+				});
+
+				const sectionPercent = document.getElementById('sectionPercent');
+				if (sectionPercent) {
+					sectionPercent.textContent = computeTrackedPercent() + '%';
+				}
+
+				const sectionCount = document.getElementById('sectionCount');
+				if (sectionCount) {
+					const trackedCount = section.items.filter((item) => item.tracked !== false).length;
+					sectionCount.textContent = trackedCount;
+				}
+
+				const lastUpdateEl = document.getElementById('lastUpdate');
+				if (lastUpdateEl) {
+					lastUpdateEl.textContent = fmtDate(new Date(project.lastUpdate));
+				}
+
+				const projectNameEl = document.getElementById('projectName');
+				if (projectNameEl) {
+					projectNameEl.textContent = project.title;
+				}
+
+				const titleEl = document.getElementById('sectionTitle');
+				if (titleEl) {
+					titleEl.textContent = HEADLINE;
+				}
+
+				const taglineEl = document.getElementById('sectionTagline');
+				if (taglineEl) {
+					taglineEl.textContent = TAGLINE;
+				}
+
+				document.title = `${HEADLINE} — ${project.title}`;
+			};
+
+			const handleUpdate = (id) => {
+				const input = document.getElementById(`input-${id}`);
+				if (!input) { return; }
+				const next = clamp(parseFloat(input.value), 0, 100);
+				if (isNaN(next)) {
+					alert('Please enter a number between 0 and 100.');
+					return;
+				}
+				const target = section.items.find((item) => item.id === id);
+				if (!target) { return; }
+				target.percent = next;
+				touchProject(project);
+				appendUpdateLog({
+					user: getActiveUserName(),
+					project: project.title || 'Project Developments',
+					section: SECTION_DEFS[SECTION_KEY]?.title || SECTION_KEY,
+					item: target.title || id
+				});
+				persistProjectState(state);
+				render();
+			};
+
+			let isWired = false;
+			const wire = () => {
+				if (!grid || isWired) { return; }
+				isWired = true;
+				grid.addEventListener('click', (event) => {
+					const trackButton = event.target.closest('[data-track]');
+					if (trackButton) {
+						event.preventDefault();
+						toggleTracked(trackButton.getAttribute('data-track'));
+						return;
+					}
+					const updateButton = event.target.closest('[data-update]');
+					if (updateButton) {
+						handleUpdate(updateButton.getAttribute('data-update'));
+					}
+				});
+			};
+
+					buildCards();
+					render();
+					wire();
+				})();
+				})();
+			</script>
+		</body>
+		</html>
